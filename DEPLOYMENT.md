@@ -27,17 +27,21 @@ Open the local URL shown by Vite and test login, livery browsing, upload, downlo
 
 ## 3. Render deployment
 
-The repository contains `render.yaml` for a Render Static Site.
+### Option A: Static Site (Recommended - Free, Fast CDN, No Cold Starts)
+1. In Render Dashboard, click **New +** -> **Static Site** (or use **New +** -> **Blueprint** using `render.yaml`).
+2. Set:
+   - **Build Command**: `npm ci && npm run build`
+   - **Publish Directory**: `dist`
+3. Add Environment Variables:
+   - `VITE_SUPABASE_URL` = your Supabase project URL
+   - `VITE_SUPABASE_ANON_KEY` = your Supabase public anon/publishable key
+4. Add a Rewrite Rule (if created manually): `/*` -> `/index.html`.
 
-Recommended Render settings if creating the service manually:
-
-- Build Command: `npm ci && npm run build`
-- Publish Directory: `dist`
-- Environment Variables:
-  - `VITE_SUPABASE_URL` = your Supabase project URL
-  - `VITE_SUPABASE_ANON_KEY` = your Supabase public anon/publishable key
-
-The SPA rewrite in `render.yaml` sends all routes to `/index.html`, so React Router routes continue working after refresh.
+### Option B: Web Service
+If you created this as a **Web Service** instead of a Static Site:
+- **Build Command**: `npm ci && npm run build`
+- **Start Command**: `npm start` (or `npm run preview` / `npm run dev`)
+- `vite.config.ts` binds host to `0.0.0.0` and listens to `$PORT` provided by Render.
 
 ## 4. Important Vite rule
 
