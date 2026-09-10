@@ -43,7 +43,8 @@ export function AdminUsersPage() {
   const [confirmModal, setConfirmModal] = useState<ConfirmModalState | null>(null);
   const [modalBusy, setModalBusy] = useState(false);
 
-  const isFounder = adminProfile?.role === 'founder';
+  // Any approved founder or admin has authority to manage accounts
+  const isManager = adminProfile?.approved === true && (adminProfile?.role === 'founder' || adminProfile?.role === 'admin');
 
   const loadProfiles = useCallback(async () => {
     const data = await getAllAdminProfiles();
@@ -78,7 +79,7 @@ export function AdminUsersPage() {
     if (error) {
       toast('error', error);
     } else {
-      toast('success', `${email} approved as ${role === 'admin' ? 'Admin' : 'User'}.`);
+      toast('success', `${email} ${role === 'admin' ? 'promoted as Admin' : 'depromoted as User'}.`);
       await loadProfiles();
     }
   }
@@ -105,9 +106,9 @@ export function AdminUsersPage() {
 
   function confirmDemoteToUser(email: string) {
     setConfirmModal({
-      title: 'Demote to User',
-      message: `Are you sure you want to demote ${email} from Admin to regular User? They will lose access to the Admin Dashboard.`,
-      confirmText: 'Demote to User',
+      title: 'Depromote to User',
+      message: `Are you sure you want to depromote ${email} to regular User? They will lose access to the Admin Dashboard.`,
+      confirmText: 'Depromote to User',
       isDanger: false,
       onConfirm: async () => {
         setActionEmail(email);
@@ -116,7 +117,7 @@ export function AdminUsersPage() {
         if (error) {
           toast('error', error);
         } else {
-          toast('success', `${email} demoted to regular User.`);
+          toast('success', `${email} depromoted to regular User.`);
           await loadProfiles();
         }
       },
@@ -130,7 +131,7 @@ export function AdminUsersPage() {
     if (error) {
       toast('error', error);
     } else {
-      toast('success', `${email} promoted to Admin.`);
+      toast('success', `${email} promoted as Admin.`);
       await loadProfiles();
     }
   }
@@ -160,7 +161,7 @@ export function AdminUsersPage() {
       <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl font-black text-bone mb-1">User & Admin Management</h1>
-          <p className="text-bone/40 font-body">Founder control panel to approve, promote, demote, and remove accounts.</p>
+          <p className="text-bone/40 font-body">Founder and administrator control panel to approve, promote, depromote, and remove accounts.</p>
         </div>
       </div>
 
@@ -182,14 +183,14 @@ export function AdminUsersPage() {
       </div>
 
       {/* Pending approvals banner */}
-      {pendingCount > 0 && isFounder && (
+      {pendingCount > 0 && isManager && (
         <div className="glass p-4 mb-6 border-l-2 border-amber-400 bg-amber-400/5">
           <div className="flex items-center gap-2 text-amber-400 font-display text-sm uppercase tracking-wider mb-1">
             <Clock className="h-4 w-4" />
-            {pendingCount} account(s) awaiting founder decision
+            {pendingCount} account(s) awaiting approval decision
           </div>
           <p className="text-bone/50 text-sm font-body">
-            Review pending sign-ups below. You can approve them either as regular Community Users or as Admins, or remove them.
+            Review pending sign-ups below. You can promote them as Admin, depromote as regular User, or reject and remove them.
           </p>
         </div>
       )}
@@ -321,13 +322,13 @@ export function AdminUsersPage() {
                   </div>
                 </div>
 
-                {/* Founder actions */}
-                {isFounder && (
+                {/* Management actions */}
+                {isManager && (
                   <div className="flex flex-wrap items-center gap-2 shrink-0">
                     {/* Self protection */}
                     {isSelf ? (
                       <span className="font-mono text-[10px] text-flame/70 uppercase tracking-widest px-3 py-1.5 bg-flame/5 border border-flame/20">
-                        Full Founder Authority
+                        Current Account (You)
                       </span>
                     ) : (
                       <>
@@ -338,24 +339,24 @@ export function AdminUsersPage() {
                               onClick={() => handleApprove(profile.email, 'admin')}
                               disabled={actionEmail === profile.email}
                               className="btn-neon text-xs px-3 py-1.5 flex items-center gap-1.5 disabled:opacity-50"
-                              title="Approve as Admin"
+                              title="Promote and Approve as Admin"
                             >
                               {actionEmail === profile.email ? (
                                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
                               ) : (
                                 <Shield className="h-3.5 w-3.5" />
                               )}
-                              Approve Admin
+                              Promote as Admin
                             </button>
 
                             <button
                               onClick={() => handleApprove(profile.email, 'user')}
                               disabled={actionEmail === profile.email}
                               className="btn-ghost text-xs px-3 py-1.5 flex items-center gap-1.5 text-cyan-400 hover:text-cyan-300 hover:border-cyan-400 disabled:opacity-50"
-                              title="Approve as regular Community User"
+                              title="Depromote / Approve as regular Community User"
                             >
                               <UserCheck className="h-3.5 w-3.5" />
-                              Approve User
+                              Depromote as User
                             </button>
 
                             <button
@@ -377,10 +378,10 @@ export function AdminUsersPage() {
                               onClick={() => confirmDemoteToUser(profile.email)}
                               disabled={actionEmail === profile.email}
                               className="btn-ghost text-xs px-3 py-1.5 flex items-center gap-1.5 text-amber-400 hover:text-amber-300 hover:border-amber-400 disabled:opacity-50"
-                              title="Demote this Admin to regular User"
+                              title="Depromote this Admin to regular User"
                             >
                               <UserMinus className="h-3.5 w-3.5" />
-                              Demote to User
+                              Depromote as User
                             </button>
 
                             <button
@@ -390,7 +391,7 @@ export function AdminUsersPage() {
                               title="Promote this Admin to Founder"
                             >
                               <Crown className="h-3.5 w-3.5" />
-                              Make Founder
+                              Promote to Founder
                             </button>
 
                             <button
@@ -419,7 +420,7 @@ export function AdminUsersPage() {
                               ) : (
                                 <Shield className="h-3.5 w-3.5" />
                               )}
-                              Promote to Admin
+                              Promote as Admin
                             </button>
 
                             <button
@@ -441,10 +442,10 @@ export function AdminUsersPage() {
                               onClick={() => confirmDemoteToUser(profile.email)}
                               disabled={actionEmail === profile.email}
                               className="btn-ghost text-xs px-3 py-1.5 flex items-center gap-1.5 text-amber-400 hover:text-amber-300 disabled:opacity-50"
-                              title="Demote this Founder to regular User"
+                              title="Depromote this Founder to regular User"
                             >
                               <UserMinus className="h-3.5 w-3.5" />
-                              Demote to User
+                              Depromote as User
                             </button>
 
                             <button
@@ -463,10 +464,10 @@ export function AdminUsersPage() {
                   </div>
                 )}
 
-                {/* Non-founder badge */}
-                {!isFounder && (
+                {/* Non-manager badge */}
+                {!isManager && (
                   <span className="font-mono text-[10px] text-bone/30 uppercase tracking-widest">
-                    Founder Only
+                    Restricted
                   </span>
                 )}
               </div>
@@ -475,12 +476,12 @@ export function AdminUsersPage() {
         </div>
       )}
 
-      {/* Non-founder notice */}
-      {!isFounder && (
+      {/* Non-manager notice */}
+      {!isManager && (
         <div className="mt-6 glass p-4 border-l-2 border-flame/40">
           <p className="text-bone/50 text-sm font-body">
-            <span className="text-flame font-bold">Note:</span> Only the founder admin has the authority to approve,
-            promote, demote, or remove accounts. You are signed in as an admin.
+            <span className="text-flame font-bold">Note:</span> Only approved administrators have the authority to approve,
+            promote, depromote, or remove accounts.
           </p>
         </div>
       )}

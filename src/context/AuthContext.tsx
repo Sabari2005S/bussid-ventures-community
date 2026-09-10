@@ -30,22 +30,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setUser(data.session?.user ?? null);
-      setLoading(false);
-      (async () => {
-        await fetchProfile(data.session?.user?.id);
-      })();
-    });
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => {
+    let mounted = true;
+
+    async function init() {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (!mounted) return;
+        setSession(data.session);
+        setUser(data.session?.user ?? null);
+        if (data.session?.user?.id) {
+          await fetchProfile(data.session.user.id);
+        } else {
+          setAdminProfile(null);
+        }
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+    init();
+
+    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, sess) => {
+      if (!mounted) return;
       setSession(sess);
       setUser(sess?.user ?? null);
-      (async () => {
-        await fetchProfile(sess?.user?.id);
-      })();
+      if (sess?.user?.id) {
+        await fetchProfile(sess.user.id);
+      } else {
+        setAdminProfile(null);
+      }
     });
-    return () => sub.subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      sub.subscription.unsubscribe();
+    };
   }, []);
 
   async function signIn(email: string, password: string) {

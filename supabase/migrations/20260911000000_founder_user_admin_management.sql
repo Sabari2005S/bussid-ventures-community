@@ -10,14 +10,14 @@
 - Enhanced get_admin_profiles() returning all accounts with role ordering.
 */
 
--- 1. Helper to verify caller is founder
+-- 1. Helper to verify caller is founder or approved admin
 CREATE OR REPLACE FUNCTION is_founder()
 RETURNS boolean
 LANGUAGE sql SECURITY DEFINER SET search_path = public
 AS $$
   SELECT EXISTS (
     SELECT 1 FROM admin_profiles
-    WHERE id = auth.uid() AND role = 'founder' AND approved = true
+    WHERE id = auth.uid() AND approved = true AND (role = 'founder' OR role = 'admin')
   );
 $$;
 
@@ -76,8 +76,8 @@ BEGIN
   END IF;
 
   -- Prevent self-demotion to avoid locking out the system
-  IF v_target_id = auth.uid() AND p_role != 'founder' THEN
-    RAISE EXCEPTION 'You cannot demote your own founder account';
+  IF v_target_id = auth.uid() AND p_role NOT IN ('founder', 'admin') THEN
+    RAISE EXCEPTION 'You cannot demote your own administrative account';
   END IF;
 
   UPDATE admin_profiles
@@ -108,7 +108,7 @@ DECLARE
   v_target_role text;
 BEGIN
   IF NOT is_founder() THEN
-    RAISE EXCEPTION 'Only the founder can remove users or admins';
+    RAISE EXCEPTION 'Only an approved founder or admin can remove users';
   END IF;
 
   SELECT id, role INTO v_target_id, v_target_role FROM public.admin_profiles WHERE email = p_email;
@@ -118,9 +118,9 @@ BEGIN
     RETURN true;
   END IF;
 
-  -- Protect founders
-  IF v_target_id = auth.uid() OR v_target_role = 'founder' THEN
-    RAISE EXCEPTION 'Cannot remove a founder account';
+  -- Protect caller from self-removal
+  IF v_target_id = auth.uid() THEN
+    RAISE EXCEPTION 'You cannot remove your own account';
   END IF;
 
   -- Delete from auth.users (cascades to admin_profiles and all user-owned data)

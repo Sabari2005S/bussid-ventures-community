@@ -137,11 +137,13 @@ function ProtectedAdminRoutes() {
     return <Navigate to="/admin" replace state={{ from: location }} />;
   }
 
-  if (adminProfile && !adminProfile.approved && adminProfile.role === 'pending') {
-    return <PendingAdminScreen />;
-  }
+  // Strictly enforce: ONLY admins who have been given approval by founder can access admin dashboard
+  const isApprovedAdmin = adminProfile?.approved === true && (adminProfile?.role === 'admin' || adminProfile?.role === 'founder');
 
-  if (adminProfile && adminProfile.role === 'user') {
+  if (!isApprovedAdmin) {
+    if (adminProfile?.role === 'pending' || !adminProfile?.approved) {
+      return <PendingAdminScreen />;
+    }
     return <AccessDeniedScreen />;
   }
 
