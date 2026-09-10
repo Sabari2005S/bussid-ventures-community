@@ -1,4 +1,4 @@
-﻿/*
+/*
 # Founder User & Admin Management System
 
 1. Features
@@ -10,25 +10,22 @@
 - Enhanced get_admin_profiles() returning all accounts with role ordering.
 */
 
--- 1. Ensure role column supports 'user' role
--- If any existing accounts are pending and need approval, they can be approved as 'admin' or 'user'.
-
--- 2. Helper to verify caller is founder
+-- 1. Helper to verify caller is founder
 CREATE OR REPLACE FUNCTION is_founder()
 RETURNS boolean
 LANGUAGE sql SECURITY DEFINER SET search_path = public
-AS \$\$
+AS $$
   SELECT EXISTS (
     SELECT 1 FROM admin_profiles
     WHERE id = auth.uid() AND role = 'founder' AND approved = true
   );
-\$\$;
+$$;
 
--- 3. Approve account as either 'admin' or 'user' (founder only)
+-- 2. Approve account as either 'admin' or 'user' (founder only)
 CREATE OR REPLACE FUNCTION approve_account(p_email text, p_role text DEFAULT 'user')
 RETURNS boolean
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
-AS \$\$
+AS $$
 BEGIN
   IF NOT is_founder() THEN
     RAISE EXCEPTION 'Only the founder can approve accounts';
@@ -44,23 +41,23 @@ BEGIN
 
   RETURN FOUND;
 END;
-\$\$;
+$$;
 
 -- Backwards compatibility wrapper for approve_admin
 CREATE OR REPLACE FUNCTION approve_admin(p_email text)
 RETURNS boolean
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
-AS \$\$
+AS $$
 BEGIN
   RETURN approve_account(p_email, 'admin');
 END;
-\$\$;
+$$;
 
--- 4. Set account role (promote/demote) - founder only
+-- 3. Set account role (promote/demote) - founder only
 CREATE OR REPLACE FUNCTION set_account_role(p_email text, p_role text)
 RETURNS boolean
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
-AS \$\$
+AS $$
 DECLARE
   v_target_id uuid;
   v_target_role text;
@@ -89,23 +86,23 @@ BEGIN
 
   RETURN FOUND;
 END;
-\$\$;
+$$;
 
 -- Backwards compatibility wrapper for set_admin_role
 CREATE OR REPLACE FUNCTION set_admin_role(p_email text, p_role text)
 RETURNS boolean
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
-AS \$\$
+AS $$
 BEGIN
   RETURN set_account_role(p_email, p_role);
 END;
-\$\$;
+$$;
 
--- 5. Remove user or admin completely (founder only)
+-- 4. Remove user or admin completely (founder only)
 CREATE OR REPLACE FUNCTION remove_user_or_admin(p_email text)
 RETURNS boolean
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, auth
-AS \$\$
+AS $$
 DECLARE
   v_target_id uuid;
   v_target_role text;
@@ -133,23 +130,23 @@ BEGIN
 
   RETURN true;
 END;
-\$\$;
+$$;
 
 -- Backwards compatibility wrapper for reject_admin
 CREATE OR REPLACE FUNCTION reject_admin(p_email text)
 RETURNS boolean
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
-AS \$\$
+AS $$
 BEGIN
   RETURN remove_user_or_admin(p_email);
 END;
-\$\$;
+$$;
 
--- 6. Get all admin & user profiles with role sorting
+-- 5. Get all admin & user profiles with role sorting
 CREATE OR REPLACE FUNCTION get_admin_profiles()
 RETURNS TABLE(id uuid, email text, role text, approved boolean, created_at timestamptz)
 LANGUAGE sql SECURITY DEFINER SET search_path = public
-AS \$\$
+AS $$
   SELECT id, email, role, approved, created_at
   FROM admin_profiles
   ORDER BY
@@ -160,9 +157,9 @@ AS \$\$
       ELSE 4
     END,
     created_at DESC;
-\$\$;
+$$;
 
--- 7. Grant execute privileges to authenticated users
+-- 6. Grant execute privileges to authenticated users
 GRANT EXECUTE ON FUNCTION is_founder() TO authenticated;
 GRANT EXECUTE ON FUNCTION approve_account(text, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION approve_admin(text) TO authenticated;
