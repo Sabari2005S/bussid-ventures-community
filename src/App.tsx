@@ -70,9 +70,25 @@ function PendingAdminScreen() {
   );
 }
 
+function AccessDeniedScreen() {
+  return (
+    <div className="min-h-screen grid place-items-center bg-ink-900 px-4">
+      <div className="hud-panel p-8 max-w-md text-center">
+        <div className="inline-flex p-3 border border-flame/30 text-flame mb-4">
+          <Shield className="h-8 w-8" />
+        </div>
+        <h1 className="font-display text-2xl font-black text-bone mb-3">Access Denied</h1>
+        <p className="text-bone/50 font-body mb-6">
+          You are signed in as a community user. Administrative privileges (Admin or Founder) are required to access this portal.
+        </p>
+        <a href="/" className="btn-neon inline-block">Return to Home</a>
+      </div>
+    </div>
+  );
+}
+
 function AnimatedRoutes() {
   const location = useLocation();
-  const isAdmin = location.pathname.startsWith('/admin');
 
   return (
     <AnimatePresence mode="wait">
@@ -123,6 +139,10 @@ function ProtectedAdminRoutes() {
 
   if (adminProfile && !adminProfile.approved && adminProfile.role === 'pending') {
     return <PendingAdminScreen />;
+  }
+
+  if (adminProfile && adminProfile.role === 'user') {
+    return <AccessDeniedScreen />;
   }
 
   return (

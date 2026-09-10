@@ -41,7 +41,7 @@ export interface LiveryGalleryImage {
 export interface AdminProfile {
   id: string;
   email: string;
-  role: 'founder' | 'admin' | 'pending';
+  role: 'founder' | 'admin' | 'user' | 'pending';
   approved: boolean;
   created_at: string;
 }
@@ -112,19 +112,31 @@ export async function getAllAdminProfiles(): Promise<AdminProfile[]> {
   return (data as AdminProfile[]) ?? [];
 }
 
-export async function approveAdminAccount(email: string): Promise<{ error: string | null }> {
-  const { error } = await supabase.rpc('approve_admin', { p_email: email });
-  return { error: error ? error.message : null };
+export async function approveAdminAccount(email: string, role: 'admin' | 'user' = 'admin'): Promise<{ error: string | null }> {
+  const { error } = await supabase.rpc('approve_account', { p_email: email, p_role: role });
+  if (error) {
+    const fallback = await supabase.rpc('approve_admin', { p_email: email });
+    return { error: fallback.error ? fallback.error.message : null };
+  }
+  return { error: null };
 }
 
 export async function rejectAdminAccount(email: string): Promise<{ error: string | null }> {
-  const { error } = await supabase.rpc('reject_admin', { p_email: email });
-  return { error: error ? error.message : null };
+  const { error } = await supabase.rpc('remove_user_or_admin', { p_email: email });
+  if (error) {
+    const fallback = await supabase.rpc('reject_admin', { p_email: email });
+    return { error: fallback.error ? fallback.error.message : null };
+  }
+  return { error: null };
 }
 
 export async function setAdminRole(email: string, role: string): Promise<{ error: string | null }> {
-  const { error } = await supabase.rpc('set_admin_role', { p_email: email, p_role: role });
-  return { error: error ? error.message : null };
+  const { error } = await supabase.rpc('set_account_role', { p_email: email, p_role: role });
+  if (error) {
+    const fallback = await supabase.rpc('set_admin_role', { p_email: email, p_role: role });
+    return { error: fallback.error ? fallback.error.message : null };
+  }
+  return { error: null };
 }
 
 // --- Social links ---
