@@ -1,24 +1,39 @@
 import { createClient } from '@supabase/supabase-js';
 
-const rawUrl = import.meta.env.VITE_SUPABASE_URL;
-const rawKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const rawUrl = (import.meta.env.VITE_SUPABASE_URL || '').trim().replace(/^["']|["']$/g, '');
+const rawKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim().replace(/^["']|["']$/g, '');
+
+const cleanUrl = rawUrl.startsWith('http')
+  ? rawUrl
+  : rawUrl
+  ? `https://${rawUrl}`
+  : '';
 
 export const isSupabaseConfigured = Boolean(
-  rawUrl &&
+  cleanUrl &&
   rawKey &&
-  typeof rawUrl === 'string' &&
-  rawUrl.startsWith('https://') &&
-  !rawUrl.includes('your-project')
+  cleanUrl.includes('.supabase.co') &&
+  !cleanUrl.includes('your-project') &&
+  !rawKey.includes('your-anon')
 );
+
+export const supabaseConfigDiagnostic = {
+  urlDetected: Boolean(cleanUrl),
+  urlPreview: cleanUrl ? (cleanUrl.length > 25 ? `${cleanUrl.slice(0, 25)}...` : cleanUrl) : 'NOT FOUND (Empty in build)',
+  keyDetected: Boolean(rawKey),
+  keyLength: rawKey ? rawKey.length : 0,
+};
 
 if (!isSupabaseConfigured) {
   console.warn(
     '[BUSSID Ventures] Supabase environment variables are missing or invalid.\n' +
-    'Please ensure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set in your hosting platform (Render/Vercel) Environment Variables and rebuild the site.'
+    'Please ensure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set in your hosting platform (Render/Vercel) Environment Variables and rebuild the site.\n' +
+    `URL: ${supabaseConfigDiagnostic.urlPreview}\n` +
+    `Key: ${supabaseConfigDiagnostic.keyDetected ? `Present (${supabaseConfigDiagnostic.keyLength} chars)` : 'Missing'}`
   );
 }
 
-const url = isSupabaseConfigured ? rawUrl : 'https://placeholder-project.supabase.co';
+const url = isSupabaseConfigured ? cleanUrl : 'https://placeholder-project.supabase.co';
 const anonKey = isSupabaseConfigured ? rawKey : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.placeholder';
 
 export const supabase = createClient(url, anonKey, {

@@ -6,7 +6,7 @@ import { ToastProvider } from '@/components/Toast';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { HomePage } from '@/pages/HomePage';
-import { isSupabaseConfigured } from '@/lib/supabase';
+import { isSupabaseConfigured, supabaseConfigDiagnostic } from '@/lib/supabase';
 import { Clock, Shield, AlertTriangle } from 'lucide-react';
 
 // Lazy-loaded routes for code splitting and instant initial bundle loading
@@ -194,9 +194,20 @@ function ProtectedAdminRoutes() {
 function SupabaseConfigBanner() {
   if (isSupabaseConfigured) return null;
   return (
-    <div className="bg-amber-500 text-black px-4 py-2.5 text-center text-xs font-mono font-bold sticky top-0 z-[100] shadow-lg flex items-center justify-center gap-2">
-      <AlertTriangle className="h-4 w-4 shrink-0" />
-      <span>Database Not Connected: `VITE_SUPABASE_URL` or `VITE_SUPABASE_ANON_KEY` is missing in Render Environment Variables. Please add them in Render settings and re-deploy.</span>
+    <div className="bg-amber-500 text-black px-4 py-2.5 text-center text-xs font-mono font-bold sticky top-0 z-[100] shadow-lg flex flex-col sm:flex-row items-center justify-center gap-2">
+      <div className="flex items-center gap-1.5">
+        <AlertTriangle className="h-4 w-4 shrink-0" />
+        <span>Database Not Connected:</span>
+      </div>
+      <span>
+        URL: <code className="bg-black/15 px-1 py-0.5 rounded">{supabaseConfigDiagnostic.urlPreview}</code> | Key:{' '}
+        <code className="bg-black/15 px-1 py-0.5 rounded">
+          {supabaseConfigDiagnostic.keyDetected ? `Detected (${supabaseConfigDiagnostic.keyLength} chars)` : 'NOT SET'}
+        </code>
+      </span>
+      <span className="opacity-80">
+        ➔ In Render Static Site: Environment ➔ Save ➔ Click "Clear build cache & deploy".
+      </span>
     </div>
   );
 }
