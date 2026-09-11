@@ -1,7 +1,25 @@
 import { createClient } from '@supabase/supabase-js';
 
-const url = import.meta.env.VITE_SUPABASE_URL;
-const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const rawUrl = import.meta.env.VITE_SUPABASE_URL;
+const rawKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+export const isSupabaseConfigured = Boolean(
+  rawUrl &&
+  rawKey &&
+  typeof rawUrl === 'string' &&
+  rawUrl.startsWith('https://') &&
+  !rawUrl.includes('your-project')
+);
+
+if (!isSupabaseConfigured) {
+  console.warn(
+    '[BUSSID Ventures] Supabase environment variables are missing or invalid.\n' +
+    'Please ensure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set in your hosting platform (Render/Vercel) Environment Variables and rebuild the site.'
+  );
+}
+
+const url = isSupabaseConfigured ? rawUrl : 'https://placeholder-project.supabase.co';
+const anonKey = isSupabaseConfigured ? rawKey : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.placeholder';
 
 export const supabase = createClient(url, anonKey, {
   auth: {
