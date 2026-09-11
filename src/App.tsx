@@ -58,6 +58,7 @@ function PageTransition({ children }: { children: React.ReactNode }) {
 }
 
 function PendingAdminScreen() {
+  const { signOut, user } = useAuth();
   return (
     <div className="min-h-screen grid place-items-center bg-ink-900 px-4">
       <div className="hud-panel p-8 max-w-md text-center">
@@ -65,17 +66,29 @@ function PendingAdminScreen() {
           <Clock className="h-8 w-8" />
         </div>
         <h1 className="font-display text-2xl font-black text-bone mb-3">Awaiting Approval</h1>
-        <p className="text-bone/50 font-body mb-6">
-          Your account has been created. The founder admin needs to approve your access before you can
-          enter the dashboard. Please check back later.
+        {user?.email && (
+          <p className="text-bone/60 font-mono text-xs mb-3 bg-black/20 py-1 px-2 border border-white/5 inline-block">
+            {user.email}
+          </p>
+        )}
+        <p className="text-bone/50 font-body mb-6 text-sm leading-relaxed">
+          Your account has been registered. An approved administrator or founder must approve your access before you can enter the dashboard.
         </p>
-        <a href="/admin" className="btn-ghost inline-block">Back to Login</a>
+        <div className="flex justify-center gap-3">
+          <button onClick={() => signOut()} className="btn-ghost text-xs px-4 py-2">
+            Sign Out
+          </button>
+          <a href="/" className="btn-neon text-xs px-4 py-2">
+            Return Home
+          </a>
+        </div>
       </div>
     </div>
   );
 }
 
 function AccessDeniedScreen() {
+  const { signOut, user } = useAuth();
   return (
     <div className="min-h-screen grid place-items-center bg-ink-900 px-4">
       <div className="hud-panel p-8 max-w-md text-center">
@@ -83,10 +96,22 @@ function AccessDeniedScreen() {
           <Shield className="h-8 w-8" />
         </div>
         <h1 className="font-display text-2xl font-black text-bone mb-3">Access Denied</h1>
-        <p className="text-bone/50 font-body mb-6">
-          You are signed in as a community user. Administrative privileges (Admin or Founder) are required to access this portal.
+        {user?.email && (
+          <p className="text-bone/60 font-mono text-xs mb-3 bg-black/20 py-1 px-2 border border-white/5 inline-block">
+            {user.email}
+          </p>
+        )}
+        <p className="text-bone/50 font-body mb-6 text-sm leading-relaxed">
+          You are signed in with a community user account. Administrative privileges are required to access this portal.
         </p>
-        <a href="/" className="btn-neon inline-block">Return to Home</a>
+        <div className="flex justify-center gap-3">
+          <button onClick={() => signOut()} className="btn-ghost text-xs px-4 py-2">
+            Sign Out
+          </button>
+          <a href="/" className="btn-neon text-xs px-4 py-2">
+            Return Home
+          </a>
+        </div>
       </div>
     </div>
   );
@@ -152,42 +177,41 @@ function ProtectedAdminRoutes() {
     return <Navigate to="/admin" replace state={{ from: location }} />;
   }
 
-  // If session is active but adminProfile is still being loaded, show spinner
-  if (adminProfile === null) {
-    return (
-      <div className="min-h-screen grid place-items-center bg-ink-900">
-        <div className="h-8 w-8 border-2 border-neon border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
   // Strictly enforce: ONLY admins who have been given approval by founder can access admin dashboard
-  const isApprovedAdmin = adminProfile.approved === true && (adminProfile.role === 'admin' || adminProfile.role === 'founder');
+  const isApprovedAdmin = adminProfile?.approved === true && (adminProfile?.role === 'admin' || adminProfile?.role === 'founder');
 
   if (!isApprovedAdmin) {
-    if (adminProfile.role === 'pending' || !adminProfile.approved) {
+    if (!adminProfile || adminProfile.role === 'pending' || !adminProfile.approved) {
       return <PendingAdminScreen />;
     }
     return <AccessDeniedScreen />;
   }
 
   return (
-    <Routes>
-      <Route element={<AdminLayout />}>
-        <Route path="dashboard" element={<AdminDashboardPage />} />
-        <Route path="liveries" element={<AdminLiveriesPage />} />
-        <Route path="add-livery" element={<AdminAddLiveryPage />} />
-        <Route path="categories" element={<AdminCategoriesPage />} />
-        <Route path="downloads" element={<AdminDownloadsPage />} />
-        <Route path="users" element={<AdminUsersPage />} />
-        <Route path="tournaments" element={<AdminTournamentsPage />} />
-        <Route path="settings" element={<AdminSettingsPage />} />
-        <Route path="notifications" element={<AdminNotificationsPage />} />
-        <Route path="analytics" element={<AdminAnalyticsPage />} />
-        <Route path="moderation" element={<AdminModerationPage />} />
-        <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
-      </Route>
-    </Routes>
+    <Suspense
+      fallback={
+        <div className="min-h-screen grid place-items-center bg-ink-900">
+          <div className="h-8 w-8 border-2 border-neon border-t-transparent rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <Routes>
+        <Route element={<AdminLayout />}>
+          <Route path="dashboard" element={<AdminDashboardPage />} />
+          <Route path="liveries" element={<AdminLiveriesPage />} />
+          <Route path="add-livery" element={<AdminAddLiveryPage />} />
+          <Route path="categories" element={<AdminCategoriesPage />} />
+          <Route path="downloads" element={<AdminDownloadsPage />} />
+          <Route path="users" element={<AdminUsersPage />} />
+          <Route path="tournaments" element={<AdminTournamentsPage />} />
+          <Route path="settings" element={<AdminSettingsPage />} />
+          <Route path="notifications" element={<AdminNotificationsPage />} />
+          <Route path="analytics" element={<AdminAnalyticsPage />} />
+          <Route path="moderation" element={<AdminModerationPage />} />
+          <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
+        </Route>
+      </Routes>
+    </Suspense>
   );
 }
 

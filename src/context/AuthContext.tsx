@@ -26,11 +26,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return null;
     }
     try {
-      const { data } = await supabase.from('admin_profiles').select('*').eq('id', uid).maybeSingle();
+      const queryPromise = supabase.from('admin_profiles').select('*').eq('id', uid).maybeSingle();
+      const timeoutPromise = new Promise<{ data: null; error: Error }>((resolve) =>
+        setTimeout(() => resolve({ data: null, error: new Error('Profile query timeout') }), 6000)
+      );
+      const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
+      if (error) {
+        console.warn('[BUSSID Ventures] Profile fetch notice:', error.message);
+      }
       const profile = (data as AdminProfile | null) ?? null;
       setAdminProfile(profile);
       return profile;
-    } catch {
+    } catch (err) {
+      console.warn('[BUSSID Ventures] Profile fetch exception:', err);
       setAdminProfile(null);
       return null;
     }
