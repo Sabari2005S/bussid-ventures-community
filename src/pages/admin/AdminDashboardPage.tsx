@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Image, Download, Tags, HardDrive, Plus, ArrowRight, Trophy, Bell, Clock, Check } from 'lucide-react';
 import { supabase, getAllAdminProfiles, type AdminProfile } from '@/lib/supabase';
+import { useAuth, isFounderEmail } from '@/context/AuthContext';
 import { useCountUp, useInView } from '@/lib/hooks';
 
 function StatCard({
@@ -41,6 +42,8 @@ function StatCard({
 }
 
 export function AdminDashboardPage() {
+  const { user, adminProfile } = useAuth();
+  const isFounder = isFounderEmail(user?.email) || adminProfile?.role === 'founder';
   const [stats, setStats] = useState({ liveries: 0, downloads: 0, categories: 0, storage: 8.6 });
   const [pendingAdmins, setPendingAdmins] = useState<AdminProfile[]>([]);
 
@@ -66,8 +69,8 @@ export function AdminDashboardPage() {
         <p className="text-bone/40 font-body">Overview of your community platform.</p>
       </div>
 
-      {/* Notifications / Pending admin requests */}
-      {pendingAdmins.length > 0 && (
+      {/* Notifications / Pending admin requests (Founder only) */}
+      {isFounder && pendingAdmins.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -97,7 +100,7 @@ export function AdminDashboardPage() {
         </motion.div>
       )}
 
-      {pendingAdmins.length === 0 && (
+      {isFounder && pendingAdmins.length === 0 && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

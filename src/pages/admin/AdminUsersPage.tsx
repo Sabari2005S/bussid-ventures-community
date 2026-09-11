@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Users,
   Shield,
@@ -43,8 +44,8 @@ export function AdminUsersPage() {
   const [confirmModal, setConfirmModal] = useState<ConfirmModalState | null>(null);
   const [modalBusy, setModalBusy] = useState(false);
 
-  // Any approved founder or admin has authority to manage accounts
-  const isManager = isFounderEmail(currentUser?.email) || (adminProfile?.approved === true && (adminProfile?.role === 'founder' || adminProfile?.role === 'admin'));
+  // ONLY the founder has authority to manage accounts
+  const isFounderOnly = isFounderEmail(currentUser?.email) || (adminProfile?.approved === true && adminProfile?.role === 'founder');
 
   const loadProfiles = useCallback(async () => {
     const data = await getAllAdminProfiles();
@@ -175,12 +176,29 @@ export function AdminUsersPage() {
     });
   }
 
+  if (!isFounderOnly) {
+    return (
+      <div className="hud-panel p-8 max-w-lg mx-auto text-center my-12">
+        <div className="inline-flex p-3 rounded-full bg-amber-400/10 text-amber-400 border border-amber-400/20 mb-4">
+          <Shield className="h-8 w-8" />
+        </div>
+        <h1 className="font-display text-2xl font-black text-bone mb-2">Founder Privileges Required</h1>
+        <p className="text-bone/50 font-body text-sm mb-6 leading-relaxed">
+          Only the Founder has the authority to approve, promote, depromote, and manage user or administrator accounts. Regular administrators do not have access to account management.
+        </p>
+        <Link to="/admin/dashboard" className="btn-neon text-xs px-4 py-2 inline-block">
+          Return to Dashboard
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl font-black text-bone mb-1">User & Admin Management</h1>
-          <p className="text-bone/40 font-body">Founder and administrator control panel to approve, promote, depromote, and remove accounts.</p>
+          <p className="text-bone/40 font-body">Founder control panel to approve, promote, depromote, and remove accounts.</p>
         </div>
       </div>
 
@@ -202,7 +220,7 @@ export function AdminUsersPage() {
       </div>
 
       {/* Pending approvals banner */}
-      {pendingCount > 0 && isManager && (
+      {pendingCount > 0 && (
         <div className="glass p-4 mb-6 border-l-2 border-amber-400 bg-amber-400/5">
           <div className="flex items-center gap-2 text-amber-400 font-display text-sm uppercase tracking-wider mb-1">
             <Clock className="h-4 w-4" />
@@ -342,10 +360,9 @@ export function AdminUsersPage() {
                 </div>
 
                 {/* Management actions */}
-                {isManager && (
-                  <div className="flex flex-wrap items-center gap-2 shrink-0">
-                    {/* Self protection */}
-                    {isSelf ? (
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                  {/* Self protection */}
+                  {isSelf ? (
                       <span className="font-mono text-[10px] text-flame/70 uppercase tracking-widest px-3 py-1.5 bg-flame/5 border border-flame/20">
                         Current Account (You)
                       </span>
@@ -481,29 +498,11 @@ export function AdminUsersPage() {
                       </>
                     )}
                   </div>
-                )}
-
-                {/* Non-manager badge */}
-                {!isManager && (
-                  <span className="font-mono text-[10px] text-bone/30 uppercase tracking-widest">
-                    Restricted
-                  </span>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Non-manager notice */}
-      {!isManager && (
-        <div className="mt-6 glass p-4 border-l-2 border-flame/40">
-          <p className="text-bone/50 text-sm font-body">
-            <span className="text-flame font-bold">Note:</span> Only approved administrators have the authority to approve,
-            promote, depromote, or remove accounts.
-          </p>
-        </div>
-      )}
+                </div>
+              );
+            })}
+          </div>
+        )}
 
       {/* Confirmation Modal */}
       {confirmModal && (

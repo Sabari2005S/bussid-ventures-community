@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Shield, Lock, Mail, ArrowRight, UserPlus, LogIn } from 'lucide-react';
@@ -7,13 +7,23 @@ import { useToast } from '@/components/Toast';
 import { Particles } from '@/components/Particles';
 
 export function AdminLoginPage() {
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, user: currentUser, adminProfile, session } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (session && currentUser) {
+      if (isFounderEmail(currentUser.email) || (adminProfile?.approved && (adminProfile?.role === 'admin' || adminProfile?.role === 'founder'))) {
+        navigate('/admin/dashboard', { replace: true });
+      } else if (adminProfile?.role === 'user') {
+        navigate('/', { replace: true });
+      }
+    }
+  }, [session, currentUser, adminProfile, navigate]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

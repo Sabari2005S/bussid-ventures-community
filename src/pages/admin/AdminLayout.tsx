@@ -42,6 +42,14 @@ export function AdminLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const isFounder = adminProfile?.role === 'founder' || isFounderEmail(user?.email);
 
+  // Only the founder has the power to manage users & admins
+  const navigationItems = SIDEBAR.filter((item) => {
+    if (item.to === '/admin/users') {
+      return isFounder;
+    }
+    return true;
+  });
+
   async function handleLogout() {
     await signOut();
     navigate('/admin');
@@ -62,7 +70,7 @@ export function AdminLayout() {
         </div>
       )}
       <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-        {SIDEBAR.map(({ label, to, icon: Icon }) => {
+        {navigationItems.map(({ label, to, icon: Icon }) => {
           const active = location.pathname === to;
           return (
             <Link

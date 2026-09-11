@@ -10,14 +10,14 @@
 - Enhanced get_admin_profiles() returning all accounts with role ordering.
 */
 
--- 1. Helper to verify caller is founder or approved admin
+-- 1. Helper to verify caller is founder (founder only)
 CREATE OR REPLACE FUNCTION is_founder()
 RETURNS boolean
 LANGUAGE sql SECURITY DEFINER SET search_path = public
 AS $$
   SELECT EXISTS (
     SELECT 1 FROM admin_profiles
-    WHERE id = auth.uid() AND approved = true AND (role = 'founder' OR role = 'admin')
+    WHERE id = auth.uid() AND approved = true AND role = 'founder'
   );
 $$;
 
@@ -108,7 +108,7 @@ DECLARE
   v_target_role text;
 BEGIN
   IF NOT is_founder() THEN
-    RAISE EXCEPTION 'Only an approved founder or admin can remove users';
+    RAISE EXCEPTION 'Only the founder can remove accounts';
   END IF;
 
   SELECT id, role INTO v_target_id, v_target_role FROM public.admin_profiles WHERE email = p_email;
@@ -174,7 +174,7 @@ ALTER TABLE admin_profiles ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "read_own_admin_profile" ON admin_profiles;
 CREATE POLICY "read_own_admin_profile" ON admin_profiles FOR SELECT
-  TO authenticated USING (auth.uid() = id OR is_founder());
+  TO authenticated USING (true);
 
 DROP POLICY IF EXISTS "founder_insert_admin_profile" ON admin_profiles;
 CREATE POLICY "founder_insert_admin_profile" ON admin_profiles FOR INSERT
