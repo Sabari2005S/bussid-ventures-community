@@ -7,8 +7,8 @@ interface AuthContextValue {
   user: User | null;
   loading: boolean;
   adminProfile: AdminProfile | null;
-  signIn: (email: string, password: string) => Promise<{ error: string | null }>;
-  signUp: (email: string, password: string) => Promise<{ error: string | null }>;
+  signIn: (email: string, password: string) => Promise<{ error: string | null; profile?: AdminProfile | null }>;
+  signUp: (email: string, password: string) => Promise<{ error: string | null; profile?: AdminProfile | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -20,13 +20,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [adminProfile, setAdminProfile] = useState<AdminProfile | null>(null);
 
-  async function fetchProfile(uid: string | undefined) {
+  async function fetchProfile(uid: string | undefined): Promise<AdminProfile | null> {
     if (!uid) {
       setAdminProfile(null);
-      return;
+      return null;
     }
-    const { data } = await supabase.from('admin_profiles').select('*').eq('id', uid).maybeSingle();
-    setAdminProfile(data as AdminProfile | null);
+    try {
+      const { data } = await supabase.from('admin_profiles').select('*').eq('id', uid).maybeSingle();
+      const profile = (data as AdminProfile | null) ?? null;
+      setAdminProfile(profile);
+      return profile;
+    } catch {
+      setAdminProfile(null);
+      return null;
+    }
   }
 
   useEffect(() => {
@@ -65,18 +72,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  async function signIn(email: string, password: string) {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error ? error.message : null };
+  async function signIn(email: string, password: string): Promise<{ error: string | null; profile?: AdminProfile | null }> {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      return { error: error.message, profile: null };
+    }
+    let profile: AdminProfile | null = null;
+    if (data.session) {
+      setSession(data.session);
+      setUser(data.user);
+      if (data.user?.id) {
+        profile = await fetchProfile(data.user.id);
+      }
+    }
+    return { error: null, profile };
   }
 
-  async function signUp(email: string, password: string) {
-    const { error } = await supabase.auth.signUp({ email, password });
-    return { error: error ? error.message : null };
+  async function signUp(email: string, password: string): Promise<{ error: string | null; profile?: AdminProfile | null }> {
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    if (error) {
+      return { error: error.message, profile: null };
+    }
+    let profile: AdminProfile | null = null;
+    if (data.session) {
+      setSession(data.session);
+      setUser(data.user);
+      if (data.user?.id) {
+        profile = await fetchProfile(data.user.id);
+      }
+    }
+    return { error: null, profile };
   }
 
   async function signOut() {
     await supabase.auth.signOut();
+    setSession(null);
+    setUser(null);
     setAdminProfile(null);
   }
 

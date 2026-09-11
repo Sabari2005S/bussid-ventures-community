@@ -19,12 +19,21 @@ export function AdminLoginPage() {
     e.preventDefault();
     setLoading(true);
     if (mode === 'login') {
-      const { error } = await signIn(email, password);
+      const { error, profile } = await signIn(email, password);
       setLoading(false);
       if (error) {
         toast('error', error);
       } else {
-        toast('success', 'Welcome back, Admin!');
+        if (profile?.role === 'user') {
+          toast('error', 'This account has community user access, not admin privileges.');
+          navigate('/');
+          return;
+        }
+        if (profile && !profile.approved) {
+          toast('info', 'Your admin account is awaiting approval.');
+        } else {
+          toast('success', 'Welcome back, Admin!');
+        }
         navigate('/admin/dashboard');
       }
     } else {
@@ -33,12 +42,16 @@ export function AdminLoginPage() {
         setLoading(false);
         return;
       }
-      const { error } = await signUp(email, password);
+      const { error, profile } = await signUp(email, password);
       setLoading(false);
       if (error) {
         toast('error', error);
       } else {
-        toast('success', 'Account created! You are now logged in.');
+        if (profile && !profile.approved) {
+          toast('success', 'Account created! Waiting for founder approval.');
+        } else {
+          toast('success', 'Account created! Welcome, Admin.');
+        }
         navigate('/admin/dashboard');
       }
     }

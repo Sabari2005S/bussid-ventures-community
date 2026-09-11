@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, memo } from 'react';
 
 interface Particle {
   x: number;
@@ -10,7 +10,7 @@ interface Particle {
   hue: number;
 }
 
-export function Particles({ count = 40, className = '' }: { count?: number; className?: string }) {
+export const Particles = memo(function Particles({ count = 40, className = '' }: { count?: number; className?: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -32,9 +32,10 @@ export function Particles({ count = 40, className = '' }: { count?: number; clas
       const rect = canvas.getBoundingClientRect();
       w = rect.width;
       h = rect.height;
-      canvas.width = w * devicePixelRatio;
-      canvas.height = h * devicePixelRatio;
-      ctx.scale(devicePixelRatio, devicePixelRatio);
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      ctx.scale(dpr, dpr);
       particles = Array.from({ length: count }, () => ({
         x: Math.random() * w,
         y: Math.random() * h,
@@ -74,4 +75,4 @@ export function Particles({ count = 40, className = '' }: { count?: number; clas
   }, [count]);
 
   return <canvas ref={canvasRef} className={`pointer-events-none ${className}`} />;
-}
+});

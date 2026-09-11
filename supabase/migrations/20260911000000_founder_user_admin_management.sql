@@ -168,3 +168,22 @@ GRANT EXECUTE ON FUNCTION set_admin_role(text, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION remove_user_or_admin(text) TO authenticated;
 GRANT EXECUTE ON FUNCTION reject_admin(text) TO authenticated;
 GRANT EXECUTE ON FUNCTION get_admin_profiles() TO authenticated;
+
+-- 7. Fix RLS policies on admin_profiles to prevent recursive subquery lag during login
+ALTER TABLE admin_profiles ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "read_own_admin_profile" ON admin_profiles;
+CREATE POLICY "read_own_admin_profile" ON admin_profiles FOR SELECT
+  TO authenticated USING (auth.uid() = id OR is_founder());
+
+DROP POLICY IF EXISTS "founder_insert_admin_profile" ON admin_profiles;
+CREATE POLICY "founder_insert_admin_profile" ON admin_profiles FOR INSERT
+  TO authenticated WITH CHECK (auth.uid() = id OR is_founder());
+
+DROP POLICY IF EXISTS "founder_update_admin_profile" ON admin_profiles;
+CREATE POLICY "founder_update_admin_profile" ON admin_profiles FOR UPDATE
+  TO authenticated USING (is_founder()) WITH CHECK (is_founder());
+
+DROP POLICY IF EXISTS "founder_delete_admin_profile" ON admin_profiles;
+CREATE POLICY "founder_delete_admin_profile" ON admin_profiles FOR DELETE
+  TO authenticated USING (is_founder());
