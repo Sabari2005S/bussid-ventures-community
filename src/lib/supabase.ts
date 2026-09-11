@@ -233,15 +233,29 @@ export interface NotificationData {
   created_at: string;
 }
 
-// --- Livery stats ---
+// --- Livery stats with in-memory TTL cache (prevents N+1 RPC network storms) ---
+const liveryStatsCache = new Map<string, { data: LiveryStats; expires: number }>();
+
+export function invalidateLiveryStats(liveryId?: string) {
+  if (liveryId) liveryStatsCache.delete(liveryId);
+  else liveryStatsCache.clear();
+}
+
 export async function getLiveryStats(liveryId: string): Promise<LiveryStats> {
+  const cached = liveryStatsCache.get(liveryId);
+  const now = Date.now();
+  if (cached && cached.expires > now) {
+    return cached.data;
+  }
   const { data } = await supabase.rpc('get_livery_stats', { p_livery_id: liveryId });
-  if (!data) return { likes_count: 0, ratings_avg: 0, ratings_count: 0, comments_count: 0, shares_count: 0 };
-  return data as unknown as LiveryStats;
+  const result = (data as unknown as LiveryStats) ?? { likes_count: 0, ratings_avg: 0, ratings_count: 0, comments_count: 0, shares_count: 0 };
+  liveryStatsCache.set(liveryId, { data: result, expires: now + 60_000 });
+  return result;
 }
 
 // --- Likes ---
 export async function toggleLike(liveryId: string): Promise<number> {
+  invalidateLiveryStats(liveryId);
   const { data } = await supabase.rpc('toggle_livery_like', { p_livery_id: liveryId });
   return (data as number) ?? 0;
 }
@@ -258,6 +272,7 @@ export async function hasUserLiked(liveryId: string, userId: string): Promise<bo
 
 // --- Ratings ---
 export async function submitRating(liveryId: string, rating: number): Promise<{ avg_rating: number; rating_count: number }> {
+  invalidateLiveryStats(liveryId);
   const { data } = await supabase.rpc('submit_livery_rating', { p_livery_id: liveryId, p_rating: rating });
   if (!data) return { avg_rating: 0, rating_count: 0 };
   const row = data as unknown as { avg_rating: number; rating_count: number };

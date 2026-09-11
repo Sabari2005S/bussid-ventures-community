@@ -17,9 +17,9 @@ import { useCountUp, useInView } from '@/lib/hooks';
 import { supabase, getHeroSlides, getSiteSettings, type HeroSlide } from '@/lib/supabase';
 
 const DEFAULT_SLIDES = [
-  'https://images.pexels.com/photos/29586609/pexels-photo-29586609.jpeg?auto=compress&cs=tinysrgb&w=1920',
-  'https://images.pexels.com/photos/32699581/pexels-photo-32699581.jpeg?auto=compress&cs=tinysrgb&w=1920',
-  'https://images.pexels.com/photos/12202915/pexels-photo-12202915.jpeg?auto=compress&cs=tinysrgb&w=1920',
+  'https://images.pexels.com/photos/29586609/pexels-photo-29586609.jpeg?auto=compress&cs=tinysrgb&w=1280&q=75',
+  'https://images.pexels.com/photos/32699581/pexels-photo-32699581.jpeg?auto=compress&cs=tinysrgb&w=1280&q=75',
+  'https://images.pexels.com/photos/12202915/pexels-photo-12202915.jpeg?auto=compress&cs=tinysrgb&w=1280&q=75',
 ];
 
 function StatCounter({ value, label, suffix = '' }: { value: number; label: string; suffix?: string }) {
@@ -86,7 +86,14 @@ export function HomePage() {
               className="absolute inset-0 transition-opacity duration-[1500ms]"
               style={{ opacity: i === slide ? 1 : 0 }}
             >
-              <img src={src} alt="" className="h-full w-full object-cover scale-105" />
+              <img
+                src={src}
+                alt=""
+                fetchPriority={i === 0 ? 'high' : 'low'}
+                loading={i === 0 ? 'eager' : 'lazy'}
+                decoding="async"
+                className="h-full w-full object-cover scale-105"
+              />
             </div>
           ))}
           <div className="absolute inset-0 bg-gradient-to-b from-ink-900/70 via-ink-900/50 to-ink-900" />

@@ -1,35 +1,39 @@
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { ToastProvider } from '@/components/Toast';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { HomePage } from '@/pages/HomePage';
-import { LiveryPage } from '@/pages/LiveryPage';
-import { LiveryDetailPage } from '@/pages/LiveryDetailPage';
-import { TournamentPage } from '@/pages/TournamentPage';
-import { GroupsPage } from '@/pages/GroupsPage';
-import { AboutPage } from '@/pages/AboutPage';
-import { ContactPage } from '@/pages/ContactPage';
-import { AdminLoginPage } from '@/pages/admin/AdminLoginPage';
-import { AdminLayout } from '@/pages/admin/AdminLayout';
-import { AdminDashboardPage } from '@/pages/admin/AdminDashboardPage';
-import { AdminLiveriesPage } from '@/pages/admin/AdminLiveriesPage';
-import { AdminAddLiveryPage } from '@/pages/admin/AdminAddLiveryPage';
-import { AdminCategoriesPage } from '@/pages/admin/AdminCategoriesPage';
-import { AdminDownloadsPage } from '@/pages/admin/AdminDownloadsPage';
-import { AdminUsersPage } from '@/pages/admin/AdminUsersPage';
-import { AdminTournamentsPage } from '@/pages/admin/AdminTournamentsPage';
-import { AdminSettingsPage } from '@/pages/admin/AdminSettingsPage';
-import { AdminNotificationsPage } from '@/pages/admin/AdminNotificationsPage';
-import { AdminAnalyticsPage } from '@/pages/admin/AdminAnalyticsPage';
-import { AdminModerationPage } from '@/pages/admin/AdminModerationPage';
-import { CommunityUploadPage } from '@/pages/CommunityUploadPage';
-import { MyUploadsPage } from '@/pages/MyUploadsPage';
-import { MyDownloadsPage } from '@/pages/MyDownloadsPage';
-import { UserLoginPage } from '@/pages/UserLoginPage';
 import { Clock, Shield } from 'lucide-react';
+
+// Lazy-loaded routes for code splitting and instant initial bundle loading
+const LiveryPage = lazy(() => import('@/pages/LiveryPage').then((m) => ({ default: m.LiveryPage })));
+const LiveryDetailPage = lazy(() => import('@/pages/LiveryDetailPage').then((m) => ({ default: m.LiveryDetailPage })));
+const TournamentPage = lazy(() => import('@/pages/TournamentPage').then((m) => ({ default: m.TournamentPage })));
+const GroupsPage = lazy(() => import('@/pages/GroupsPage').then((m) => ({ default: m.GroupsPage })));
+const AboutPage = lazy(() => import('@/pages/AboutPage').then((m) => ({ default: m.AboutPage })));
+const ContactPage = lazy(() => import('@/pages/ContactPage').then((m) => ({ default: m.ContactPage })));
+const CommunityUploadPage = lazy(() => import('@/pages/CommunityUploadPage').then((m) => ({ default: m.CommunityUploadPage })));
+const MyUploadsPage = lazy(() => import('@/pages/MyUploadsPage').then((m) => ({ default: m.MyUploadsPage })));
+const MyDownloadsPage = lazy(() => import('@/pages/MyDownloadsPage').then((m) => ({ default: m.MyDownloadsPage })));
+const UserLoginPage = lazy(() => import('@/pages/UserLoginPage').then((m) => ({ default: m.UserLoginPage })));
+
+// Admin lazy-loaded routes
+const AdminLoginPage = lazy(() => import('@/pages/admin/AdminLoginPage').then((m) => ({ default: m.AdminLoginPage })));
+const AdminLayout = lazy(() => import('@/pages/admin/AdminLayout').then((m) => ({ default: m.AdminLayout })));
+const AdminDashboardPage = lazy(() => import('@/pages/admin/AdminDashboardPage').then((m) => ({ default: m.AdminDashboardPage })));
+const AdminLiveriesPage = lazy(() => import('@/pages/admin/AdminLiveriesPage').then((m) => ({ default: m.AdminLiveriesPage })));
+const AdminAddLiveryPage = lazy(() => import('@/pages/admin/AdminAddLiveryPage').then((m) => ({ default: m.AdminAddLiveryPage })));
+const AdminCategoriesPage = lazy(() => import('@/pages/admin/AdminCategoriesPage').then((m) => ({ default: m.AdminCategoriesPage })));
+const AdminDownloadsPage = lazy(() => import('@/pages/admin/AdminDownloadsPage').then((m) => ({ default: m.AdminDownloadsPage })));
+const AdminUsersPage = lazy(() => import('@/pages/admin/AdminUsersPage').then((m) => ({ default: m.AdminUsersPage })));
+const AdminTournamentsPage = lazy(() => import('@/pages/admin/AdminTournamentsPage').then((m) => ({ default: m.AdminTournamentsPage })));
+const AdminSettingsPage = lazy(() => import('@/pages/admin/AdminSettingsPage').then((m) => ({ default: m.AdminSettingsPage })));
+const AdminNotificationsPage = lazy(() => import('@/pages/admin/AdminNotificationsPage').then((m) => ({ default: m.AdminNotificationsPage })));
+const AdminAnalyticsPage = lazy(() => import('@/pages/admin/AdminAnalyticsPage').then((m) => ({ default: m.AdminAnalyticsPage })));
+const AdminModerationPage = lazy(() => import('@/pages/admin/AdminModerationPage').then((m) => ({ default: m.AdminModerationPage })));
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -87,27 +91,37 @@ function AccessDeniedScreen() {
   );
 }
 
+function PageLoading() {
+  return (
+    <div className="min-h-[60vh] grid place-items-center">
+      <div className="h-8 w-8 border-2 border-neon border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+}
+
 function AnimatedRoutes() {
   const location = useLocation();
 
   return (
     <AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
-        <Route path="/" element={<PageTransition><PublicLayout><HomePage /></PublicLayout></PageTransition>} />
-        <Route path="/livery" element={<PageTransition><PublicLayout><LiveryPage /></PublicLayout></PageTransition>} />
-        <Route path="/livery/:id" element={<PageTransition><PublicLayout><LiveryDetailPage /></PublicLayout></PageTransition>} />
-        <Route path="/tournament" element={<PageTransition><PublicLayout><TournamentPage /></PublicLayout></PageTransition>} />
-        <Route path="/groups" element={<PageTransition><PublicLayout><GroupsPage /></PublicLayout></PageTransition>} />
-        <Route path="/about" element={<PageTransition><PublicLayout><AboutPage /></PublicLayout></PageTransition>} />
-        <Route path="/contact" element={<PageTransition><PublicLayout><ContactPage /></PublicLayout></PageTransition>} />
-        <Route path="/upload-livery" element={<PageTransition><PublicLayout><CommunityUploadPage /></PublicLayout></PageTransition>} />
-        <Route path="/my-uploads" element={<PageTransition><PublicLayout><MyUploadsPage /></PublicLayout></PageTransition>} />
-        <Route path="/my-downloads" element={<PageTransition><PublicLayout><MyDownloadsPage /></PublicLayout></PageTransition>} />
-        <Route path="/login" element={<UserLoginPage />} />
-        <Route path="/admin" element={<AdminLoginPage />} />
-        <Route path="/admin/*" element={<ProtectedAdminRoutes />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <Suspense fallback={<PageLoading />}>
+        <Routes location={location} key={location.pathname}>
+          <Route path="/" element={<PageTransition><PublicLayout><HomePage /></PublicLayout></PageTransition>} />
+          <Route path="/livery" element={<PageTransition><PublicLayout><LiveryPage /></PublicLayout></PageTransition>} />
+          <Route path="/livery/:id" element={<PageTransition><PublicLayout><LiveryDetailPage /></PublicLayout></PageTransition>} />
+          <Route path="/tournament" element={<PageTransition><PublicLayout><TournamentPage /></PublicLayout></PageTransition>} />
+          <Route path="/groups" element={<PageTransition><PublicLayout><GroupsPage /></PublicLayout></PageTransition>} />
+          <Route path="/about" element={<PageTransition><PublicLayout><AboutPage /></PublicLayout></PageTransition>} />
+          <Route path="/contact" element={<PageTransition><PublicLayout><ContactPage /></PublicLayout></PageTransition>} />
+          <Route path="/upload-livery" element={<PageTransition><PublicLayout><CommunityUploadPage /></PublicLayout></PageTransition>} />
+          <Route path="/my-uploads" element={<PageTransition><PublicLayout><MyUploadsPage /></PublicLayout></PageTransition>} />
+          <Route path="/my-downloads" element={<PageTransition><PublicLayout><MyDownloadsPage /></PublicLayout></PageTransition>} />
+          <Route path="/login" element={<UserLoginPage />} />
+          <Route path="/admin" element={<AdminLoginPage />} />
+          <Route path="/admin/*" element={<ProtectedAdminRoutes />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
     </AnimatePresence>
   );
 }
