@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Shield, Lock, Mail, ArrowRight, UserPlus, LogIn } from 'lucide-react';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth, isFounderEmail } from '@/context/AuthContext';
 import { useToast } from '@/components/Toast';
 import { Particles } from '@/components/Particles';
 
@@ -24,15 +24,16 @@ export function AdminLoginPage() {
       if (error) {
         toast('error', error);
       } else {
-        if (profile?.role === 'user') {
+        const isFounder = isFounderEmail(email);
+        if (profile?.role === 'user' && !isFounder) {
           toast('error', 'This account has community user access, not admin privileges.');
           navigate('/');
           return;
         }
-        if (profile && !profile.approved) {
+        if (profile && !profile.approved && !isFounder) {
           toast('info', 'Your admin account is awaiting approval.');
         } else {
-          toast('success', 'Welcome back, Admin!');
+          toast('success', isFounder ? 'Welcome back, Founder!' : 'Welcome back, Admin!');
         }
         navigate('/admin/dashboard');
       }

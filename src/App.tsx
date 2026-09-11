@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { useEffect, lazy, Suspense } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { AuthProvider, useAuth, isFounderEmail } from '@/context/AuthContext';
 import { ToastProvider } from '@/components/Toast';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
@@ -163,7 +163,7 @@ function PublicLayout({ children }: { children: React.ReactNode }) {
 }
 
 function ProtectedAdminRoutes() {
-  const { session, loading, adminProfile } = useAuth();
+  const { session, loading, adminProfile, user } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -178,7 +178,11 @@ function ProtectedAdminRoutes() {
   }
 
   // Strictly enforce: ONLY admins who have been given approval by founder can access admin dashboard
-  const isApprovedAdmin = adminProfile?.approved === true && (adminProfile?.role === 'admin' || adminProfile?.role === 'founder');
+  // Designated founder always has guaranteed instant access
+  const isDesignatedFounder = isFounderEmail(user?.email);
+  const isApprovedAdmin =
+    isDesignatedFounder ||
+    (adminProfile?.approved === true && (adminProfile?.role === 'admin' || adminProfile?.role === 'founder'));
 
   if (!isApprovedAdmin) {
     if (!adminProfile || adminProfile.role === 'pending' || !adminProfile.approved) {

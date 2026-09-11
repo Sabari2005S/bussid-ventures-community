@@ -18,7 +18,7 @@ import {
   BarChart3,
   Shield,
 } from 'lucide-react';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth, isFounderEmail } from '@/context/AuthContext';
 import { Crown } from 'lucide-react';
 
 const SIDEBAR = [
@@ -40,7 +40,7 @@ export function AdminLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const isFounder = adminProfile?.role === 'founder';
+  const isFounder = adminProfile?.role === 'founder' || isFounderEmail(user?.email);
 
   async function handleLogout() {
     await signOut();

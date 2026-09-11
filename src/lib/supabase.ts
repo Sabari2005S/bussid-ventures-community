@@ -141,8 +141,20 @@ export async function getAdminProfile(): Promise<AdminProfile | null> {
 }
 
 export async function getAllAdminProfiles(): Promise<AdminProfile[]> {
-  const { data } = await supabase.rpc('get_admin_profiles');
-  return (data as AdminProfile[]) ?? [];
+  try {
+    const { data, error } = await supabase.rpc('get_admin_profiles');
+    if (!error && Array.isArray(data) && data.length > 0) {
+      return data as AdminProfile[];
+    }
+  } catch {
+    // fallback to direct table query
+  }
+  try {
+    const { data } = await supabase.from('admin_profiles').select('*').order('created_at', { ascending: false });
+    return (data as AdminProfile[]) ?? [];
+  } catch {
+    return [];
+  }
 }
 
 export async function approveAdminAccount(email: string, role: 'admin' | 'user' = 'admin'): Promise<{ error: string | null }> {

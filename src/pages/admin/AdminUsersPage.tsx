@@ -13,7 +13,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { useToast } from '@/components/Toast';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth, isFounderEmail } from '@/context/AuthContext';
 import {
   getAllAdminProfiles,
   approveAdminAccount,
@@ -44,13 +44,32 @@ export function AdminUsersPage() {
   const [modalBusy, setModalBusy] = useState(false);
 
   // Any approved founder or admin has authority to manage accounts
-  const isManager = adminProfile?.approved === true && (adminProfile?.role === 'founder' || adminProfile?.role === 'admin');
+  const isManager = isFounderEmail(currentUser?.email) || (adminProfile?.approved === true && (adminProfile?.role === 'founder' || adminProfile?.role === 'admin'));
 
   const loadProfiles = useCallback(async () => {
     const data = await getAllAdminProfiles();
-    setProfiles(data);
+    let foundFounder = false;
+    const mapped = data.map((p) => {
+      if (isFounderEmail(p.email)) {
+        foundFounder = true;
+        return { ...p, role: 'founder' as const, approved: true };
+      }
+      return p;
+    });
+
+    if (!foundFounder && currentUser?.email && isFounderEmail(currentUser.email)) {
+      mapped.unshift({
+        id: currentUser.id,
+        email: currentUser.email,
+        role: 'founder',
+        approved: true,
+        created_at: new Date().toISOString(),
+      });
+    }
+
+    setProfiles(mapped);
     setLoading(false);
-  }, []);
+  }, [currentUser]);
 
   useEffect(() => {
     loadProfiles();
@@ -255,7 +274,7 @@ export function AdminUsersPage() {
       ) : (
         <div className="space-y-3">
           {filteredProfiles.map((profile) => {
-            const isSelf = profile.id === currentUser?.id || profile.email === currentUser?.email;
+            const isSelf = profile.id === currentUser?.id || profile.email.toLowerCase() === currentUser?.email?.toLowerCase() || (isFounderEmail(currentUser?.email) && isFounderEmail(profile.email));
             const isTargetFounder = profile.role === 'founder';
 
             return (
