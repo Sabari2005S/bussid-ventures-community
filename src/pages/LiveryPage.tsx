@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Search, SlidersHorizontal, X, Download, TrendingUp, Clock, Upload } from 'lucide-react';
+import { Search, SlidersHorizontal, X, Download, TrendingUp, Clock, Upload, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -125,10 +125,19 @@ export function LiveryPage() {
             <p className="text-bone/50 font-body text-lg max-w-xl">
               Discover liveries created by the BUSSID community.
             </p>
-            <Link to="/upload-livery" className="btn-neon shrink-0">
-              <Upload className="h-4 w-4" />
-              Upload Your Livery
-            </Link>
+            <div className="flex flex-wrap items-center gap-3">
+              <Link
+                to="/requests"
+                className="btn-ghost shrink-0 border border-amber-400/40 text-amber-400 hover:bg-amber-400/10"
+              >
+                <Sparkles className="h-4 w-4" />
+                Wanted / Request Livery
+              </Link>
+              <Link to="/upload-livery" className="btn-neon shrink-0">
+                <Upload className="h-4 w-4" />
+                Upload Your Livery
+              </Link>
+            </div>
           </div>
         </motion.div>
 

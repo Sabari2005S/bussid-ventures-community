@@ -6,6 +6,7 @@ import { ToastProvider } from '@/components/Toast';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { HomePage } from '@/pages/HomePage';
+import { PwaInstallPrompt } from '@/components/PwaInstallPrompt';
 import { isSupabaseConfigured, supabaseConfigDiagnostic } from '@/lib/supabase';
 import { Clock, Shield, AlertTriangle } from 'lucide-react';
 
@@ -251,6 +252,7 @@ export default function App() {
     <AuthProvider>
       <ToastProvider>
         <SupabaseConfigBanner />
+        <PwaInstallPrompt />
         <BrowserRouter>
           <ScrollToTop />
           <AnimatedRoutes />

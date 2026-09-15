@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, Search, Bus, Shield, LogIn, LogOut, User, HardDrive } from 'lucide-react';
+import { Menu, X, Search, Bus, Shield, LogIn, LogOut, User, HardDrive, Smartphone } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { NotificationBell } from '@/components/NotificationBell';
 import { useAuth } from '@/context/AuthContext';
@@ -9,7 +9,6 @@ const NAV = [
   { label: 'Home', to: '/' },
   { label: 'Livery', to: '/livery' },
   { label: 'Convoys', to: '/convoys' },
-  { label: 'Requests', to: '/requests' },
   { label: 'Tournament', to: '/tournament' },
   { label: 'Groups', to: '/groups' },
   { label: 'About', to: '/about' },
@@ -255,6 +254,16 @@ export function Navbar() {
                   <Shield className="h-5 w-5" />
                   Admin Dashboard
                 </Link>
+                <button
+                  onClick={() => {
+                    setOpen(false);
+                    window.dispatchEvent(new CustomEvent('trigger-pwa-install'));
+                  }}
+                  className="mt-4 flex items-center gap-2 py-4 font-display text-lg font-bold uppercase tracking-wider text-neon border-t border-white/10 w-full text-left"
+                >
+                  <Smartphone className="h-5 w-5" />
+                  Install App (Android)
+                </button>
               </div>
             </motion.div>
           </motion.div>
