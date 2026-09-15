@@ -17,6 +17,7 @@ import {
   Bell,
   BarChart3,
   Shield,
+  Radio,
 } from 'lucide-react';
 import { useAuth, isFounderEmail } from '@/context/AuthContext';
 import { Crown } from 'lucide-react';
@@ -28,6 +29,7 @@ const SIDEBAR = [
   { label: 'Categories', to: '/admin/categories', icon: Tags },
   { label: 'Downloads', to: '/admin/downloads', icon: Download },
   { label: 'Users', to: '/admin/users', icon: Users },
+  { label: 'Convoys', to: '/admin/convoys', icon: Radio },
   { label: 'Tournaments', to: '/admin/tournaments', icon: Trophy },
   { label: 'Moderation', to: '/admin/moderation', icon: Shield },
   { label: 'Analytics', to: '/admin/analytics', icon: BarChart3 },

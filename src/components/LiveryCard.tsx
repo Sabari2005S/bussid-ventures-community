@@ -1,22 +1,30 @@
 import { useRef, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Download, Eye, User, Heart, Star } from 'lucide-react';
+import { Download, Eye, User, Heart, Star, BadgeCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { Livery } from '@/lib/types';
-import { publicImageUrl, downloadLiveryFile, getLiveryStats, type LiveryStats } from '@/lib/supabase';
+import { publicImageUrl, downloadLiveryFile, getLiveryStats, getVerifiedCreatorEmails, type LiveryStats } from '@/lib/supabase';
 
 export function LiveryCard({ livery, index = 0 }: { livery: Livery; index?: number }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [tilt, setTilt] = useState({ rx: 0, ry: 0 });
   const [downloading, setDownloading] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
   const [stats, setStats] = useState<LiveryStats>({ likes_count: 0, ratings_avg: 0, ratings_count: 0, comments_count: 0, shares_count: 0 });
 
   useEffect(() => {
     (async () => {
-      const s = await getLiveryStats(livery.id);
+      const [s, verified] = await Promise.all([
+        getLiveryStats(livery.id),
+        getVerifiedCreatorEmails(),
+      ]);
       setStats(s);
+      if (livery.creator) {
+        const c = livery.creator.toLowerCase().trim();
+        setIsVerified(verified.has(c) || verified.has(c.split('@')[0]));
+      }
     })();
-  }, [livery.id]);
+  }, [livery.id, livery.creator]);
 
   function onMove(e: React.MouseEvent) {
     const el = cardRef.current;
@@ -121,9 +129,12 @@ export function LiveryCard({ livery, index = 0 }: { livery: Livery; index?: numb
               <Download className="h-3.5 w-3.5" />
               {livery.downloads.toLocaleString()}
             </span>
-            <span className="flex items-center gap-1.5 ml-auto">
-              <User className="h-3.5 w-3.5" />
-              {livery.creator}
+            <span className="flex items-center gap-1.5 ml-auto truncate max-w-[130px]" title={`Creator: ${livery.creator}${isVerified ? ' (Verified Artist)' : ''}`}>
+              <User className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">{livery.creator}</span>
+              {isVerified && (
+                <BadgeCheck className="h-3.5 w-3.5 text-amber-400 shrink-0 fill-amber-400/20" />
+              )}
             </span>
           </div>
 

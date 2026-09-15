@@ -3,13 +3,13 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Download, User, Calendar, Tag, Share2, Flag, Eye, CheckCircle,
-  Heart, Star, MessageCircle, Send, Edit2, Trash2, Reply, ChevronDown, X, Link2,
+  Heart, Star, MessageCircle, Send, Edit2, Trash2, Reply, ChevronDown, X, Link2, BadgeCheck,
 } from 'lucide-react';
 import {
   supabase, publicImageUrl, downloadLiveryFile, getLiveryGallery,
   getLiveryStats, toggleLike, hasUserLiked, submitRating, getUserRating,
   getComments, postComment, updateComment, deleteComment, toggleCommentLike,
-  hasUserLikedComment, trackShare, reportContent, trackDownload,
+  hasUserLikedComment, trackShare, reportContent, trackDownload, getVerifiedCreatorEmails,
   type LiveryGalleryImage, type LiveryStats, type CommentData,
 } from '@/lib/supabase';
 import type { Livery } from '@/lib/types';
@@ -40,6 +40,7 @@ export function LiveryDetailPage() {
   const [editingComment, setEditingComment] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
   const [postingComment, setPostingComment] = useState(false);
+  const [isCreatorVerified, setIsCreatorVerified] = useState(false);
 
   const loadAll = useCallback(async () => {
     if (!id) return;
@@ -51,6 +52,18 @@ export function LiveryDetailPage() {
     if (!data) { setLoading(false); return; }
     setLivery(data);
     setDownloadCount(data.downloads);
+
+    try {
+      const verified = await getVerifiedCreatorEmails();
+      const c = data.creator?.toLowerCase().trim() || '';
+      setIsCreatorVerified(
+        verified.has(c) ||
+        Array.from(verified).some((v) => v.split('@')[0].toLowerCase() === c)
+      );
+    } catch {
+      // ignore
+    }
+
     const galleryData = await getLiveryGallery(id);
     setGallery(galleryData);
     const s = await getLiveryStats(id);
@@ -380,7 +393,16 @@ export function LiveryDetailPage() {
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div className="glass p-3">
                 <div className="font-mono text-[10px] uppercase tracking-widest text-bone/40 mb-1">Creator</div>
-                <div className="flex items-center gap-1.5 text-bone font-body"><User className="h-4 w-4 text-neon" />{livery.creator}</div>
+                <div className="flex items-center gap-1.5 text-bone font-body flex-wrap">
+                  <User className="h-4 w-4 text-neon" />
+                  <span>{livery.creator}</span>
+                  {isCreatorVerified && (
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-400/10 text-amber-400 border border-amber-400/30">
+                      <BadgeCheck className="w-3.5 h-3.5" />
+                      Verified Artist
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="glass p-3">
                 <div className="font-mono text-[10px] uppercase tracking-widest text-bone/40 mb-1">Upload Date</div>

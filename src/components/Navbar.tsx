@@ -8,6 +8,8 @@ import { useAuth } from '@/context/AuthContext';
 const NAV = [
   { label: 'Home', to: '/' },
   { label: 'Livery', to: '/livery' },
+  { label: 'Convoys', to: '/convoys' },
+  { label: 'Requests', to: '/requests' },
   { label: 'Tournament', to: '/tournament' },
   { label: 'Groups', to: '/groups' },
   { label: 'About', to: '/about' },

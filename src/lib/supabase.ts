@@ -76,6 +76,7 @@ export interface AdminProfile {
   email: string;
   role: 'founder' | 'admin' | 'user' | 'pending';
   approved: boolean;
+  is_verified_creator?: boolean;
   created_at: string;
 }
 
@@ -643,3 +644,293 @@ export async function getUserDownloads(): Promise<DownloadHistoryEntry[]> {
     livery_file_name: r.liveries.file_name,
   }));
 }
+
+// ==========================================
+// Verified Creators
+// ==========================================
+
+export async function toggleVerifiedCreator(email: string, status: boolean): Promise<{ error: string | null }> {
+  const { error } = await supabase.rpc('toggle_verified_creator', { p_email: email, p_status: status });
+  if (error) {
+    // Fallback direct update
+    const { error: directErr } = await supabase
+      .from('admin_profiles')
+      .update({ is_verified_creator: status })
+      .eq('email', email);
+    return { error: directErr ? directErr.message : null };
+  }
+  return { error: null };
+}
+
+let verifiedCreatorsCache: { set: Set<string>; expires: number } | null = null;
+
+export async function getVerifiedCreatorEmails(): Promise<Set<string>> {
+  const now = Date.now();
+  if (verifiedCreatorsCache && verifiedCreatorsCache.expires > now) {
+    return verifiedCreatorsCache.set;
+  }
+  try {
+    const { data } = await supabase
+      .from('admin_profiles')
+      .select('email')
+      .eq('is_verified_creator', true);
+    const set = new Set<string>();
+    (data ?? []).forEach((r) => {
+      if (r.email) {
+        const full = r.email.toLowerCase().trim();
+        set.add(full);
+        const namePart = full.split('@')[0];
+        if (namePart) set.add(namePart);
+      }
+    });
+    verifiedCreatorsCache = { set, expires: now + 60_000 };
+    return set;
+  } catch {
+    return new Set();
+  }
+}
+
+// ==========================================
+// Convoy / Mabar Events
+// ==========================================
+
+export interface Convoy {
+  id: string;
+  title: string;
+  route_description: string;
+  start_time: string;
+  vehicle_theme: string;
+  server_region: string;
+  room_name: string;
+  room_password?: string | null;
+  max_participants: number;
+  participants_count: number;
+  status: 'upcoming' | 'live' | 'completed' | 'cancelled';
+  discord_url?: string | null;
+  whatsapp_url?: string | null;
+  organizer_name: string;
+  created_by?: string | null;
+  created_at: string;
+}
+
+export interface ConvoyRsvp {
+  id: string;
+  convoy_id: string;
+  user_id: string;
+  player_name: string;
+  in_game_id: string;
+  phone?: string | null;
+  status: string;
+  created_at: string;
+}
+
+export async function getConvoys(): Promise<Convoy[]> {
+  const { data, error } = await supabase
+    .from('convoys')
+    .select('*')
+    .order('start_time', { ascending: true });
+  if (error || !data) return [];
+  return data as Convoy[];
+}
+
+export async function getConvoyById(id: string): Promise<Convoy | null> {
+  const { data } = await supabase.from('convoys').select('*').eq('id', id).maybeSingle();
+  return (data as Convoy | null) ?? null;
+}
+
+export async function createConvoy(params: {
+  title: string;
+  route_description: string;
+  start_time: string;
+  vehicle_theme: string;
+  server_region: string;
+  room_name: string;
+  room_password?: string | null;
+  max_participants: number;
+  discord_url?: string | null;
+  whatsapp_url?: string | null;
+  organizer_name: string;
+}): Promise<{ id: string | null; error: string | null }> {
+  const userId = (await supabase.auth.getUser()).data.user?.id;
+  const { data, error } = await supabase
+    .from('convoys')
+    .insert({
+      ...params,
+      created_by: userId ?? null,
+      status: 'upcoming',
+      participants_count: 0,
+    })
+    .select('id')
+    .single();
+  return { id: data?.id ?? null, error: error?.message ?? null };
+}
+
+export async function updateConvoyStatus(id: string, status: Convoy['status']): Promise<{ error: string | null }> {
+  const { error } = await supabase.from('convoys').update({ status }).eq('id', id);
+  return { error: error?.message ?? null };
+}
+
+export async function deleteConvoy(id: string): Promise<{ error: string | null }> {
+  const { error } = await supabase.from('convoys').delete().eq('id', id);
+  return { error: error?.message ?? null };
+}
+
+export async function rsvpForConvoy(params: {
+  convoy_id: string;
+  player_name: string;
+  in_game_id: string;
+  phone?: string | null;
+}): Promise<{ success: boolean; error: string | null }> {
+  const { error } = await supabase.rpc('rsvp_for_convoy', {
+    p_convoy_id: params.convoy_id,
+    p_player_name: params.player_name,
+    p_in_game_id: params.in_game_id,
+    p_phone: params.phone ?? null,
+  });
+  if (error) {
+    // Direct table fallback
+    const userId = (await supabase.auth.getUser()).data.user?.id;
+    if (!userId) return { success: false, error: 'Must be logged in to RSVP' };
+    const { error: insertErr } = await supabase.from('convoy_rsvps').insert({
+      convoy_id: params.convoy_id,
+      user_id: userId,
+      player_name: params.player_name,
+      in_game_id: params.in_game_id,
+      phone: params.phone ?? null,
+    });
+    if (insertErr) return { success: false, error: insertErr.message };
+  }
+  return { success: true, error: null };
+}
+
+export async function cancelConvoyRsvp(convoy_id: string): Promise<{ success: boolean; error: string | null }> {
+  const { error } = await supabase.rpc('cancel_convoy_rsvp', { p_convoy_id: convoy_id });
+  if (error) {
+    const userId = (await supabase.auth.getUser()).data.user?.id;
+    if (!userId) return { success: false, error: 'Must be logged in' };
+    await supabase.from('convoy_rsvps').delete().eq('convoy_id', convoy_id).eq('user_id', userId);
+  }
+  return { success: true, error: null };
+}
+
+export async function getUserConvoyRsvps(): Promise<string[]> {
+  const userId = (await supabase.auth.getUser()).data.user?.id;
+  if (!userId) return [];
+  const { data } = await supabase.from('convoy_rsvps').select('convoy_id').eq('user_id', userId);
+  return (data ?? []).map((r) => r.convoy_id);
+}
+
+export async function getConvoyRsvps(convoy_id: string): Promise<ConvoyRsvp[]> {
+  const { data } = await supabase
+    .from('convoy_rsvps')
+    .select('*')
+    .eq('convoy_id', convoy_id)
+    .order('created_at', { ascending: true });
+  return (data as ConvoyRsvp[]) ?? [];
+}
+
+// ==========================================
+// Livery Requests
+// ==========================================
+
+export interface LiveryRequest {
+  id: string;
+  title: string;
+  vehicle_name: string;
+  operator_name: string;
+  description?: string | null;
+  reference_image_url?: string | null;
+  requested_by: string;
+  requester_email: string;
+  status: 'open' | 'claimed' | 'completed' | 'closed';
+  claimed_by?: string | null;
+  claimed_by_name?: string | null;
+  completed_livery_id?: string | null;
+  upvotes_count: number;
+  created_at: string;
+  has_upvoted?: boolean;
+}
+
+export async function getLiveryRequests(): Promise<LiveryRequest[]> {
+  const { data, error } = await supabase
+    .from('livery_requests')
+    .select('*')
+    .order('upvotes_count', { ascending: false });
+  if (error || !data) return [];
+  return data as LiveryRequest[];
+}
+
+export async function createLiveryRequest(params: {
+  title: string;
+  vehicle_name: string;
+  operator_name: string;
+  description?: string;
+  reference_image_url?: string;
+}): Promise<{ id: string | null; error: string | null }> {
+  const user = (await supabase.auth.getUser()).data.user;
+  if (!user) return { id: null, error: 'You must be signed in to post a request.' };
+  const { data, error } = await supabase
+    .from('livery_requests')
+    .insert({
+      ...params,
+      requested_by: user.id,
+      requester_email: user.email || 'Community Member',
+      status: 'open',
+      upvotes_count: 1,
+    })
+    .select('id')
+    .single();
+  return { id: data?.id ?? null, error: error?.message ?? null };
+}
+
+export async function claimLiveryRequest(requestId: string, creatorName: string): Promise<{ error: string | null }> {
+  const { error } = await supabase.rpc('claim_livery_request', {
+    p_request_id: requestId,
+    p_creator_name: creatorName,
+  });
+  if (error) {
+    const userId = (await supabase.auth.getUser()).data.user?.id;
+    const { error: updateErr } = await supabase
+      .from('livery_requests')
+      .update({ status: 'claimed', claimed_by: userId, claimed_by_name: creatorName })
+      .eq('id', requestId);
+    return { error: updateErr ? updateErr.message : null };
+  }
+  return { error: null };
+}
+
+export async function completeLiveryRequest(requestId: string, liveryId: string): Promise<{ error: string | null }> {
+  const { error } = await supabase.rpc('complete_livery_request', {
+    p_request_id: requestId,
+    p_livery_id: liveryId,
+  });
+  if (error) {
+    const { error: updateErr } = await supabase
+      .from('livery_requests')
+      .update({ status: 'completed', completed_livery_id: liveryId })
+      .eq('id', requestId);
+    return { error: updateErr ? updateErr.message : null };
+  }
+  return { error: null };
+}
+
+export async function toggleRequestUpvote(requestId: string): Promise<{ upvotes_count: number; error: string | null }> {
+  const { data, error } = await supabase.rpc('toggle_request_upvote', { p_request_id: requestId });
+  if (error) {
+    return { upvotes_count: 0, error: error.message };
+  }
+  return { upvotes_count: Number(data), error: null };
+}
+
+export async function getUserUpvotedRequestIds(): Promise<string[]> {
+  const userId = (await supabase.auth.getUser()).data.user?.id;
+  if (!userId) return [];
+  const { data } = await supabase.from('livery_request_upvotes').select('request_id').eq('user_id', userId);
+  return (data ?? []).map((r) => r.request_id);
+}
+
+export async function deleteLiveryRequest(requestId: string): Promise<{ error: string | null }> {
+  const { error } = await supabase.from('livery_requests').delete().eq('id', requestId);
+  return { error: error?.message ?? null };
+}
+

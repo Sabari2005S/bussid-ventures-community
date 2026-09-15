@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Bell, Clock, Check, X, ArrowRight, Users, CheckCircle, Loader2 } from 'lucide-react';
 import { useToast } from '@/components/Toast';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth, isFounderEmail } from '@/context/AuthContext';
 import {
   getAllAdminProfiles,
   approveAdminAccount,
@@ -13,12 +13,12 @@ import {
 
 export function AdminNotificationsPage() {
   const toast = useToast();
-  const { adminProfile } = useAuth();
+  const { adminProfile, user: currentUser } = useAuth();
   const [profiles, setProfiles] = useState<AdminProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionEmail, setActionEmail] = useState<string | null>(null);
 
-  const isFounder = adminProfile?.role === 'founder';
+  const isFounder = isFounderEmail(currentUser?.email) || adminProfile?.role === 'founder';
 
   const loadProfiles = useCallback(async () => {
     const data = await getAllAdminProfiles();
@@ -55,8 +55,10 @@ export function AdminNotificationsPage() {
   }
 
   const pending = profiles.filter((p) => p.role === 'pending');
-  const activeAdmins = profiles.filter((p) => p.role !== 'pending' && p.role !== 'founder');
-  const founders = profiles.filter((p) => p.role === 'founder');
+  // BUGFIX: Strictly filter ONLY approved admins (exclude community users)
+  const activeAdmins = profiles.filter((p) => p.role === 'admin' && p.approved === true);
+  const founders = profiles.filter((p) => p.role === 'founder' || isFounderEmail(p.email));
+  const communityUsers = profiles.filter((p) => p.role === 'user');
 
   return (
     <div>
@@ -175,13 +177,21 @@ export function AdminNotificationsPage() {
             <p className="text-bone/40 font-body text-sm">No active admins.</p>
           </div>
         )}
+        {communityUsers.length > 0 && (
+          <div className="mt-3 px-4 py-2.5 bg-white/[0.02] border border-white/5 flex items-center justify-between text-xs">
+            <span className="text-bone/50 font-body">Registered Community Members</span>
+            <span className="font-mono text-cyan-400 font-bold">{communityUsers.length}</span>
+          </div>
+        )}
       </div>
 
-      {/* Link to users page */}
-      <Link to="/admin/users" className="btn-ghost text-sm">
-        Manage All Users
-        <ArrowRight className="h-4 w-4" />
-      </Link>
+      {/* Link to users page (Founder only) */}
+      {isFounder && (
+        <Link to="/admin/users" className="btn-ghost text-sm inline-flex items-center gap-2">
+          Manage All Users & Admins
+          <ArrowRight className="h-4 w-4" />
+        </Link>
+      )}
     </div>
   );
 }

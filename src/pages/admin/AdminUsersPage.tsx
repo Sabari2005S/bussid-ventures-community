@@ -12,6 +12,7 @@ import {
   UserCheck,
   UserMinus,
   AlertTriangle,
+  BadgeCheck,
 } from 'lucide-react';
 import { useToast } from '@/components/Toast';
 import { useAuth, isFounderEmail } from '@/context/AuthContext';
@@ -20,6 +21,7 @@ import {
   approveAdminAccount,
   rejectAdminAccount,
   setAdminRole,
+  toggleVerifiedCreator,
   type AdminProfile,
 } from '@/lib/supabase';
 
@@ -174,6 +176,18 @@ export function AdminUsersPage() {
         }
       },
     });
+  }
+
+  async function handleToggleVerifiedCreator(email: string, status: boolean) {
+    setActionEmail(email);
+    const { error } = await toggleVerifiedCreator(email, status);
+    setActionEmail(null);
+    if (error) {
+      toast('error', error);
+    } else {
+      toast('success', `${email} ${status ? 'awarded Verified Artist badge!' : 'Verified Artist badge revoked.'}`);
+      await loadProfiles();
+    }
   }
 
   if (!isFounderOnly) {
@@ -352,6 +366,11 @@ export function AdminUsersPage() {
                           <Clock className="h-3 w-3" /> Pending
                         </span>
                       )}
+                      {profile.is_verified_creator && (
+                        <span className="font-mono text-[9px] uppercase px-1.5 py-0.5 bg-amber-400/20 text-amber-300 font-bold border border-amber-400/40 flex items-center gap-1">
+                          <BadgeCheck className="h-3 w-3" /> Verified Artist
+                        </span>
+                      )}
                       <span className="font-mono text-[10px] text-bone/30">
                         Joined: {new Date(profile.created_at).toLocaleDateString()}
                       </span>
@@ -361,6 +380,21 @@ export function AdminUsersPage() {
 
                 {/* Management actions */}
                 <div className="flex flex-wrap items-center gap-2 shrink-0">
+                  {/* Verified Artist toggle for any account */}
+                  <button
+                    onClick={() => handleToggleVerifiedCreator(profile.email, !profile.is_verified_creator)}
+                    disabled={actionEmail === profile.email}
+                    className={`text-xs px-2.5 py-1.5 flex items-center gap-1.5 border transition-all ${
+                      profile.is_verified_creator
+                        ? 'bg-amber-400/20 text-amber-300 border-amber-400/50 hover:bg-amber-400/30'
+                        : 'btn-ghost text-bone/60 hover:text-amber-300 hover:border-amber-400/40'
+                    }`}
+                    title={profile.is_verified_creator ? 'Revoke Verified Artist badge' : 'Award Verified Artist badge'}
+                  >
+                    <BadgeCheck className="h-3.5 w-3.5 text-amber-400" />
+                    {profile.is_verified_creator ? 'Verified Artist ✓' : 'Verify Artist'}
+                  </button>
+
                   {/* Self protection */}
                   {isSelf ? (
                       <span className="font-mono text-[10px] text-flame/70 uppercase tracking-widest px-3 py-1.5 bg-flame/5 border border-flame/20">

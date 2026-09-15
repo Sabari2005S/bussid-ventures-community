@@ -20,6 +20,8 @@ const CommunityUploadPage = lazy(() => import('@/pages/CommunityUploadPage').the
 const MyUploadsPage = lazy(() => import('@/pages/MyUploadsPage').then((m) => ({ default: m.MyUploadsPage })));
 const MyDownloadsPage = lazy(() => import('@/pages/MyDownloadsPage').then((m) => ({ default: m.MyDownloadsPage })));
 const UserLoginPage = lazy(() => import('@/pages/UserLoginPage').then((m) => ({ default: m.UserLoginPage })));
+const ConvoysPage = lazy(() => import('@/pages/ConvoysPage').then((m) => ({ default: m.ConvoysPage })));
+const LiveryRequestsPage = lazy(() => import('@/pages/LiveryRequestsPage').then((m) => ({ default: m.LiveryRequestsPage })));
 
 // Admin lazy-loaded routes
 const AdminLoginPage = lazy(() => import('@/pages/admin/AdminLoginPage').then((m) => ({ default: m.AdminLoginPage })));
@@ -30,6 +32,7 @@ const AdminAddLiveryPage = lazy(() => import('@/pages/admin/AdminAddLiveryPage')
 const AdminCategoriesPage = lazy(() => import('@/pages/admin/AdminCategoriesPage').then((m) => ({ default: m.AdminCategoriesPage })));
 const AdminDownloadsPage = lazy(() => import('@/pages/admin/AdminDownloadsPage').then((m) => ({ default: m.AdminDownloadsPage })));
 const AdminUsersPage = lazy(() => import('@/pages/admin/AdminUsersPage').then((m) => ({ default: m.AdminUsersPage })));
+const AdminConvoysPage = lazy(() => import('@/pages/admin/AdminConvoysPage').then((m) => ({ default: m.AdminConvoysPage })));
 const AdminTournamentsPage = lazy(() => import('@/pages/admin/AdminTournamentsPage').then((m) => ({ default: m.AdminTournamentsPage })));
 const AdminSettingsPage = lazy(() => import('@/pages/admin/AdminSettingsPage').then((m) => ({ default: m.AdminSettingsPage })));
 const AdminNotificationsPage = lazy(() => import('@/pages/admin/AdminNotificationsPage').then((m) => ({ default: m.AdminNotificationsPage })));
@@ -135,6 +138,8 @@ function AnimatedRoutes() {
           <Route path="/" element={<PageTransition><PublicLayout><HomePage /></PublicLayout></PageTransition>} />
           <Route path="/livery" element={<PageTransition><PublicLayout><LiveryPage /></PublicLayout></PageTransition>} />
           <Route path="/livery/:id" element={<PageTransition><PublicLayout><LiveryDetailPage /></PublicLayout></PageTransition>} />
+          <Route path="/convoys" element={<PageTransition><PublicLayout><ConvoysPage /></PublicLayout></PageTransition>} />
+          <Route path="/requests" element={<PageTransition><PublicLayout><LiveryRequestsPage /></PublicLayout></PageTransition>} />
           <Route path="/tournament" element={<PageTransition><PublicLayout><TournamentPage /></PublicLayout></PageTransition>} />
           <Route path="/groups" element={<PageTransition><PublicLayout><GroupsPage /></PublicLayout></PageTransition>} />
           <Route path="/about" element={<PageTransition><PublicLayout><AboutPage /></PublicLayout></PageTransition>} />
@@ -207,6 +212,7 @@ function ProtectedAdminRoutes() {
           <Route path="categories" element={<AdminCategoriesPage />} />
           <Route path="downloads" element={<AdminDownloadsPage />} />
           <Route path="users" element={<AdminUsersPage />} />
+          <Route path="convoys" element={<AdminConvoysPage />} />
           <Route path="tournaments" element={<AdminTournamentsPage />} />
           <Route path="settings" element={<AdminSettingsPage />} />
           <Route path="notifications" element={<AdminNotificationsPage />} />
