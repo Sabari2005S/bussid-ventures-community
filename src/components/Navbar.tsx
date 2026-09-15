@@ -48,19 +48,16 @@ export function Navbar() {
     <>
       <header
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-          scrolled ? 'glass-strong shadow-hud' : 'bg-transparent'
+          scrolled ? 'bg-ink-900/95 backdrop-blur-xl border-b border-white/10 shadow-lg' : 'bg-transparent'
         }`}
       >
         <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <Link to="/" className="group flex items-center gap-2.5">
-              <div className="relative">
-                <Bus className="h-7 w-7 text-neon drop-shadow-[0_0_6px_rgba(124,255,0,0.6)]" />
-                <div className="absolute inset-0 animate-pulse-glow rounded-full bg-neon/20 blur-md" />
-              </div>
+              <Bus className="h-7 w-7 text-bone group-hover:text-white transition-colors" />
               <div className="font-display text-sm font-black tracking-wider leading-none">
                 <span className="text-bone">BUSSID</span>{' '}
-                <span className="text-neon">VENTURES</span>
+                <span className="text-white">VENTURES</span>
                 <div className="text-[9px] tracking-[0.4em] text-bone/50 font-mono">COMMUNITY</div>
               </div>
             </Link>
@@ -74,11 +71,11 @@ export function Navbar() {
                     to={item.to}
                     className="relative px-4 py-2 font-display text-sm font-bold uppercase tracking-wider transition-colors duration-200"
                   >
-                    <span className={active ? 'text-neon' : 'text-bone/70 hover:text-bone'}>{item.label}</span>
+                    <span className={active ? 'text-white font-bold' : 'text-bone/70 hover:text-white'}>{item.label}</span>
                     {active && (
                       <motion.div
                         layoutId="nav-underline"
-                        className="absolute bottom-0 left-3 right-3 h-0.5 bg-neon shadow-neon-sm"
+                        className="absolute bottom-0 left-3 right-3 h-0.5 bg-white/80"
                         style={{ clipPath: 'polygon(0 0, 100% 0, 90% 100%, 10% 100%)' }}
                       />
                     )}
@@ -91,7 +88,7 @@ export function Navbar() {
               <NotificationBell />
               <button
                 onClick={() => setSearchOpen((s) => !s)}
-                className="p-2 text-bone/70 hover:text-neon transition-colors"
+                className="p-2 text-bone/70 hover:text-white transition-colors"
                 aria-label="Search"
               >
                 <Search className="h-5 w-5" />

@@ -36,15 +36,14 @@ export function Footer() {
   }
 
   return (
-    <footer className="relative mt-20 border-t border-white/5 bg-ink-800/50">
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-neon/40 to-transparent" />
+    <footer className="relative mt-20 border-t border-white/10 bg-ink-900">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-14">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           <div className="md:col-span-2">
             <Link to="/" className="flex items-center gap-2.5 mb-4">
-              <Bus className="h-7 w-7 text-neon" />
+              <Bus className="h-7 w-7 text-bone" />
               <div className="font-display text-sm font-black tracking-wider">
-                <span className="text-bone">BUSSID</span> <span className="text-neon">VENTURES</span>
+                <span className="text-bone">BUSSID</span> <span className="text-white">VENTURES</span>
                 <div className="text-[9px] tracking-[0.4em] text-bone/50 font-mono">COMMUNITY</div>
               </div>
             </Link>
@@ -55,7 +54,7 @@ export function Footer() {
             <div className="flex gap-3 mt-6">
               {socialLinks.map((link) => {
                 const Icon = PLATFORM_ICONS[link.platform] ?? Link2;
-                const color = PLATFORM_COLORS[link.platform] ?? 'hover:text-neon';
+                const color = PLATFORM_COLORS[link.platform] ?? 'hover:text-white';
                 return (
                   <button
                     key={link.id}
@@ -71,7 +70,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="font-display text-xs uppercase tracking-[0.3em] text-neon mb-4">Quick Links</h4>
+            <h4 className="font-display text-xs uppercase tracking-[0.2em] text-bone/80 font-bold mb-4">Quick Links</h4>
             <ul className="space-y-2.5 font-body">
               {[
                 { label: 'Home', to: '/' },
@@ -81,7 +80,7 @@ export function Footer() {
                 { label: 'Contact', to: '/contact' },
               ].map((l) => (
                 <li key={l.to}>
-                  <Link to={l.to} className="text-bone/50 hover:text-neon transition-colors text-sm">
+                  <Link to={l.to} className="text-bone/50 hover:text-white transition-colors text-sm">
                     {l.label}
                   </Link>
                 </li>
@@ -90,7 +89,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="font-display text-xs uppercase tracking-[0.3em] text-neon mb-4">Community</h4>
+            <h4 className="font-display text-xs uppercase tracking-[0.2em] text-bone/80 font-bold mb-4">Community</h4>
             <ul className="space-y-2.5 font-body">
               {[
                 { label: 'WhatsApp Group', to: '/groups' },
@@ -100,7 +99,7 @@ export function Footer() {
                 { label: 'Admin Panel', to: '/admin' },
               ].map((l) => (
                 <li key={l.label}>
-                  <Link to={l.to} className="text-bone/50 hover:text-neon transition-colors text-sm">
+                  <Link to={l.to} className="text-bone/50 hover:text-white transition-colors text-sm">
                     {l.label}
                   </Link>
                 </li>
