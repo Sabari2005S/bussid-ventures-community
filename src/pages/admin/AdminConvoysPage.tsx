@@ -28,10 +28,10 @@ export function AdminConvoysPage() {
     title: '',
     route_description: '',
     start_time: '',
-    vehicle_theme: 'All BUSSID Vehicles & Liveries',
-    server_region: 'Asia (Jakarta / Singapore)',
-    room_name: '',
-    room_password: '',
+    vehicle_theme: 'Kerala & Tamil Nadu Buses (All Welcome)',
+    server_region: 'India , Chennai',
+    room_name: 'bussid_ventures',
+    room_password: '1111',
     max_participants: 50,
     organizer_name: '',
   });
@@ -57,10 +57,10 @@ export function AdminConvoysPage() {
       title: '',
       route_description: '',
       start_time: localIso,
-      vehicle_theme: 'All BUSSID Vehicles & Liveries',
-      server_region: 'Asia (Jakarta / Singapore)',
-      room_name: `MABAR-${Math.floor(1000 + Math.random() * 9000)}`,
-      room_password: `${Math.floor(1000 + Math.random() * 9000)}`,
+      vehicle_theme: 'Kerala & Tamil Nadu Buses (All Welcome)',
+      server_region: 'India , Chennai',
+      room_name: 'bussid_ventures',
+      room_password: '1111',
       max_participants: 50,
       organizer_name: user?.email?.split('@')[0] || 'Community Admin',
     });
@@ -141,7 +141,7 @@ export function AdminConvoysPage() {
             </h1>
           </div>
           <p className="text-bone/50 text-xs font-body">
-            Schedule multiplayer convoy runs, reveal room credentials to RSVP participants, and monitor driver attendance.
+            Schedule multiplayer convoy runs, reveal room credentials to registered drivers, and monitor driver attendance.
           </p>
         </div>
 
@@ -316,7 +316,7 @@ export function AdminConvoysPage() {
                     <input
                       type="text"
                       required
-                      placeholder="e.g. Solo Terminal -> Klaten -> Yogyakarta"
+                      placeholder="e.g. Chennai -> Salem -> Madurai / Kochi to Munnar"
                       value={formData.route_description}
                       onChange={(e) => setFormData({ ...formData, route_description: e.target.value })}
                       className="input-hud w-full text-xs"
@@ -340,7 +340,7 @@ export function AdminConvoysPage() {
                     <label className="block text-bone/70 uppercase mb-1">Server Region</label>
                     <input
                       type="text"
-                      placeholder="e.g. Asia (Jakarta), India / South Asia"
+                      placeholder="e.g. India , Chennai"
                       value={formData.server_region}
                       onChange={(e) => setFormData({ ...formData, server_region: e.target.value })}
                       className="input-hud w-full text-xs"
@@ -351,7 +351,7 @@ export function AdminConvoysPage() {
                     <label className="block text-bone/70 uppercase mb-1">Vehicle / Livery Theme</label>
                     <input
                       type="text"
-                      placeholder="e.g. KSRTC Buses Only, Tourist HD, Trucks"
+                      placeholder="e.g. Kerala & Tamil Nadu Buses (SETC, KSRTC, Private Coaches)"
                       value={formData.vehicle_theme}
                       onChange={(e) => setFormData({ ...formData, vehicle_theme: e.target.value })}
                       className="input-hud w-full text-xs"
@@ -365,7 +365,7 @@ export function AdminConvoysPage() {
                     <input
                       type="text"
                       required
-                      placeholder="e.g. MABAR-SOLO-01"
+                      placeholder="e.g. bussid_ventures"
                       value={formData.room_name}
                       onChange={(e) => setFormData({ ...formData, room_name: e.target.value })}
                       className="input-hud w-full text-xs"
@@ -376,7 +376,7 @@ export function AdminConvoysPage() {
                     <label className="block text-bone/70 uppercase mb-1">Room Passcode (Optional)</label>
                     <input
                       type="text"
-                      placeholder="e.g. 7788"
+                      placeholder="e.g. 1111"
                       value={formData.room_password}
                       onChange={(e) => setFormData({ ...formData, room_password: e.target.value })}
                       className="input-hud w-full text-xs"
@@ -461,7 +461,7 @@ export function AdminConvoysPage() {
                 {viewingRsvpsConvoy.title}
               </h3>
               <p className="text-bone/50 text-xs font-mono mb-4">
-                Total RSVP'd Drivers: {rsvps.length}
+                Total Registered Drivers: {rsvps.length}
               </p>
 
               <div className="flex-1 overflow-y-auto pr-1">
@@ -471,7 +471,7 @@ export function AdminConvoysPage() {
                   </div>
                 ) : rsvps.length === 0 ? (
                   <div className="py-8 text-center text-bone/40 text-xs font-mono">
-                    No drivers have RSVP'd for this convoy yet.
+                    No drivers have registered for this convoy yet.
                   </div>
                 ) : (
                   <div className="space-y-2">

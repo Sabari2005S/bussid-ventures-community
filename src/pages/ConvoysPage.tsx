@@ -108,7 +108,7 @@ export function ConvoysPage() {
 
   const handleOpenRsvp = (convoy: Convoy) => {
     if (!user) {
-      toast('info', 'Please sign in to RSVP for community convoys.');
+      toast('info', 'Please sign in to register for community convoys.');
       navigate('/login');
       return;
     }
@@ -141,7 +141,7 @@ export function ConvoysPage() {
     }
 
     if (success) {
-      toast('success', `RSVP confirmed! Room credentials unlocked.`);
+      toast('success', `Registration confirmed! Room credentials unlocked.`);
       setUserRsvps((prev) => new Set(prev).add(rsvpModalConvoy.id));
       setConvoys((prev) =>
         prev.map((c) =>
@@ -153,14 +153,14 @@ export function ConvoysPage() {
   };
 
   const handleCancelRsvp = async (convoyId: string) => {
-    if (!confirm('Are you sure you want to cancel your RSVP for this convoy?')) return;
+    if (!confirm('Are you sure you want to cancel your registration for this convoy?')) return;
     const { success, error } = await cancelConvoyRsvp(convoyId);
     if (error) {
       toast('error', error);
       return;
     }
     if (success) {
-      toast('info', 'RSVP cancelled.');
+      toast('info', 'Registration cancelled.');
       setUserRsvps((prev) => {
         const next = new Set(prev);
         next.delete(convoyId);
@@ -192,7 +192,7 @@ export function ConvoysPage() {
       `📍 *Route:* ${convoy.route_description}\n` +
       `⏰ *Departure:* ${formattedDate}\n` +
       `🌏 *Server:* ${convoy.server_region}\n` +
-      `🎨 *Livery :* ${convoy.vehicle_theme}\n\n` +
+      `🎨 *Livery Theme:* ${convoy.vehicle_theme}\n\n` +
       `👉 Register now to unlock room name & password:\n` +
       `${window.location.origin}/convoys`;
 
@@ -253,7 +253,7 @@ export function ConvoysPage() {
             COMMUNITY <span className="text-gradient">CONVOYS</span>
           </h1>
           <p className="text-bone/60 font-body text-base sm:text-lg max-w-2xl leading-relaxed">
-            Let Explore the maps  together! Join scheduled multiplayer convoys (Video Shooting ) across All maps. Register  to unlock secret room credentials, view live departure countdowns, and convoy in sync.
+            Let's explore the maps together! Join scheduled multiplayer convoys (Mabar & Video Shooting) across Tamil Nadu, Kerala, and all maps. Register to unlock server room credentials, view live departure countdowns, and convoy together.
           </p>
         </motion.div>
 
@@ -399,7 +399,7 @@ export function ConvoysPage() {
                             </span>
                             {hasRsvped && (
                               <span className="px-1.5 py-0.5 rounded text-[10px] bg-neon/20 text-neon font-bold">
-                                RSVP'd
+                                Registered
                               </span>
                             )}
                           </div>
@@ -442,7 +442,7 @@ export function ConvoysPage() {
                         <div className="p-3.5 rounded-xl glass border border-bone/15 text-xs text-bone/60 flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <Lock className="w-4 h-4 text-bone/40" />
-                            <span>Regsiter to unlock server room name & password</span>
+                            <span>Register to unlock server room name & password</span>
                           </div>
                           <span className="text-[10px] uppercase font-mono tracking-wider text-bone/40">
                             Locked
@@ -460,7 +460,7 @@ export function ConvoysPage() {
                           onClick={() => handleCancelRsvp(convoy.id)}
                           className="px-3 py-1.5 rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500/10 text-xs font-mono transition"
                         >
-                          Cancel RSVP
+                          Cancel Registration
                         </button>
                       ) : convoy.status === 'completed' || convoy.status === 'cancelled' ? (
                         <span className="text-xs font-mono text-bone/40 uppercase">Event Closed</span>
@@ -472,7 +472,7 @@ export function ConvoysPage() {
                           className="btn-neon text-xs py-1.5 px-4"
                         >
                           <CheckCircle className="w-3.5 h-3.5 mr-1" />
-                          RSVP for Convoy
+                          Register for Convoy
                         </button>
                       )}
                     </div>
@@ -528,7 +528,7 @@ export function ConvoysPage() {
 
                 <div className="flex items-center gap-2 mb-1 text-neon text-xs font-mono uppercase tracking-wider">
                   <CheckCircle className="w-4 h-4" />
-                  Confirm Driver Attendance
+                  Driver Registration
                 </div>
 
                 <h3 className="font-display text-xl font-bold text-bone mb-1">
@@ -572,19 +572,19 @@ export function ConvoysPage() {
 
                   <div>
                     <label className="block text-xs font-mono uppercase text-bone/60 mb-1.5">
-                      Contact / Discord (Optional)
+                      Contact / WhatsApp / Discord (Optional)
                     </label>
                     <input
                       type="text"
                       value={contactInfo}
                       onChange={(e) => setContactInfo(e.target.value)}
-                      placeholder="e.g. Discord handle or WhatsApp"
+                      placeholder="e.g. WhatsApp number or Discord"
                       className="input-hud w-full text-xs"
                     />
                   </div>
 
                   <div className="p-3 rounded-lg bg-neon/10 border border-neon/20 text-[11px] text-neon font-body leading-relaxed">
-                    ✨ Upon confirmation, the secret room name and passcode will instantly unlock on your card!
+                    ✨ Upon registration, the secret room name and password will instantly unlock on your card!
                   </div>
 
                   <div className="flex gap-3 pt-2">
@@ -600,7 +600,7 @@ export function ConvoysPage() {
                       disabled={submittingRsvp}
                       className="btn-neon flex-1 text-xs justify-center disabled:opacity-50"
                     >
-                      {submittingRsvp ? 'Confirming...' : 'Lock In Seat'}
+                      {submittingRsvp ? 'Registering...' : 'Register Now'}
                     </button>
                   </div>
                 </form>

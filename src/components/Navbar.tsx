@@ -62,20 +62,20 @@ export function Navbar() {
               </div>
             </Link>
 
-            <div className="hidden lg:flex items-center gap-1">
+            <div className="hidden lg:flex items-center gap-0.5 xl:gap-1">
               {NAV.map((item) => {
                 const active = location.pathname === item.to;
                 return (
                   <Link
                     key={item.to}
                     to={item.to}
-                    className="relative px-4 py-2 font-display text-sm font-bold uppercase tracking-wider transition-colors duration-200"
+                    className="relative px-2.5 xl:px-3.5 py-1.5 font-display text-xs xl:text-sm font-bold uppercase tracking-wider transition-colors duration-200"
                   >
                     <span className={active ? 'text-white font-bold' : 'text-bone/70 hover:text-white'}>{item.label}</span>
                     {active && (
                       <motion.div
                         layoutId="nav-underline"
-                        className="absolute bottom-0 left-3 right-3 h-0.5 bg-white/80"
+                        className="absolute bottom-0 left-2 right-2 h-0.5 bg-white/80"
                         style={{ clipPath: 'polygon(0 0, 100% 0, 90% 100%, 10% 100%)' }}
                       />
                     )}
@@ -84,54 +84,60 @@ export function Navbar() {
               })}
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               <NotificationBell />
               <button
                 onClick={() => setSearchOpen((s) => !s)}
-                className="p-2 text-bone/70 hover:text-white transition-colors"
+                className="p-1.5 sm:p-2 text-bone/70 hover:text-white transition-colors"
                 aria-label="Search"
               >
                 <Search className="h-5 w-5" />
               </button>
               {user ? (
-                <div className="hidden sm:flex items-center gap-2">
+                <div className="flex items-center gap-1.5 sm:gap-2">
                   <Link
                     to="/my-uploads"
-                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-display font-bold uppercase tracking-wider text-neon border border-neon/30 hover:bg-neon/10 transition-all"
+                    className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-display font-bold uppercase tracking-wider text-neon border border-neon/30 hover:bg-neon/10 transition-all rounded"
+                    title={user.email ?? 'Account'}
                   >
-                    <User className="h-4 w-4" />
-                    {user.email?.split('@')[0] ?? 'Account'}
+                    <User className="h-3.5 w-3.5 shrink-0" />
+                    <span className="max-w-[75px] sm:max-w-[110px] xl:max-w-[140px] truncate">
+                      {user.email?.split('@')[0] ?? 'Account'}
+                    </span>
                   </Link>
                   <Link
                     to="/my-downloads"
-                    className="p-2 text-bone/70 hover:text-neon transition-colors"
+                    className="p-1.5 sm:p-2 text-bone/70 hover:text-neon transition-colors"
                     aria-label="My Downloads"
+                    title="My Downloads"
                   >
-                    <HardDrive className="h-5 w-5" />
+                    <HardDrive className="h-4 w-4 sm:h-5 sm:w-5" />
                   </Link>
                   <button
                     onClick={() => signOut()}
-                    className="p-2 text-bone/70 hover:text-flame transition-colors"
+                    className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 text-xs font-display font-bold uppercase tracking-wider text-red-400 border border-red-500/30 hover:bg-red-500/10 hover:text-red-300 transition-all shrink-0 rounded"
                     aria-label="Sign out"
+                    title="Log Out"
                   >
-                    <LogOut className="h-5 w-5" />
+                    <LogOut className="h-3.5 w-3.5 shrink-0" />
+                    <span className="hidden sm:inline">Log Out</span>
                   </button>
                 </div>
               ) : (
                 <Link
                   to="/login"
-                  className="hidden sm:flex items-center gap-1.5 px-3 py-2 text-xs font-display font-bold uppercase tracking-wider text-neon border border-neon/30 hover:bg-neon/10 transition-all"
+                  className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-display font-bold uppercase tracking-wider text-neon border border-neon/30 hover:bg-neon/10 transition-all rounded"
                 >
-                  <LogIn className="h-4 w-4" />
-                  Sign In
+                  <LogIn className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <span>Sign In</span>
                 </Link>
               )}
               <Link
                 to="/admin"
-                className="hidden sm:flex items-center gap-1.5 px-3 py-2 text-xs font-display font-bold uppercase tracking-wider text-flame border border-flame/30 hover:bg-flame/10 transition-all"
+                className="hidden sm:flex items-center gap-1 px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-display font-bold uppercase tracking-wider text-flame border border-flame/30 hover:bg-flame/10 transition-all rounded shrink-0"
               >
-                <Shield className="h-4 w-4" />
-                Admin
+                <Shield className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <span>Admin</span>
               </Link>
               <button
                 onClick={() => setOpen(true)}
