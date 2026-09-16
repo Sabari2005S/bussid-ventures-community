@@ -187,13 +187,13 @@ export function ConvoysPage() {
       hour: '2-digit',
       minute: '2-digit',
     });
-    const message = `🚌 *BUSSID VENTURES MULTIPLAYER CONVOY (MABAR)* 🚌\n\n` +
+    const message = `🚌 *BUSSID VENTURES MULTIPLAYER CONVOY (Video Shooting)* 🚌\n\n` +
       `🔥 *${convoy.title}*\n` +
       `📍 *Route:* ${convoy.route_description}\n` +
       `⏰ *Departure:* ${formattedDate}\n` +
       `🌏 *Server:* ${convoy.server_region}\n` +
-      `🎨 *Livery Theme:* ${convoy.vehicle_theme}\n\n` +
-      `👉 RSVP now to unlock room name & password:\n` +
+      `🎨 *Livery :* ${convoy.vehicle_theme}\n\n` +
+      `👉 Register now to unlock room name & password:\n` +
       `${window.location.origin}/convoys`;
 
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`, '_blank');
@@ -253,8 +253,7 @@ export function ConvoysPage() {
             COMMUNITY <span className="text-gradient">CONVOYS</span>
           </h1>
           <p className="text-bone/60 font-body text-base sm:text-lg max-w-2xl leading-relaxed">
-            Hit the highways together! Join scheduled multiplayer convoys (Mabar) across Indonesia,
-            Kerala, and custom road networks. RSVP to unlock secret room credentials, view live departure countdowns, and convoy in sync.
+            Let Explore the maps  together! Join scheduled multiplayer convoys (Video Shooting ) across All maps. Register  to unlock secret room credentials, view live departure countdowns, and convoy in sync.
           </p>
         </motion.div>
 
