@@ -442,7 +442,7 @@ export function ConvoysPage() {
                         <div className="p-3.5 rounded-xl glass border border-bone/15 text-xs text-bone/60 flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <Lock className="w-4 h-4 text-bone/40" />
-                            <span>RSVP to unlock server room name & password</span>
+                            <span>Regsiter to unlock server room name & password</span>
                           </div>
                           <span className="text-[10px] uppercase font-mono tracking-wider text-bone/40">
                             Locked
