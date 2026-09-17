@@ -55,21 +55,16 @@ export function AboutPage() {
       {/* Hero */}
       <section className="relative h-[50vh] min-h-[400px] overflow-hidden">
         <div className="absolute inset-0">
-          {heroImage ? (
+          {heroImage && (
             <img
               src={heroImage}
-              alt=""
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <img
-              src="https://images.pexels.com/photos/14724053/pexels-photo-14724053.jpeg?auto=compress&cs=tinysrgb&w=1920"
-              alt=""
+              alt="About BUSSID Ventures"
               className="h-full w-full object-cover"
             />
           )}
           <div className="absolute inset-0 bg-gradient-to-b from-ink-900/60 via-ink-900/70 to-ink-900" />
-          <div className="absolute inset-0 grid-bg opacity-20" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_30%,rgba(124,255,0,0.1),transparent_70%)]" />
+          <div className="absolute inset-0 grid-bg opacity-25" />
         </div>
         <Particles count={30} className="absolute inset-0" />
         <div className="relative z-10 h-full flex flex-col items-center justify-center text-center px-4">

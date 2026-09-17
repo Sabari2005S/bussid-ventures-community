@@ -34,12 +34,6 @@ import {
 import type { Livery, Tournament } from '@/lib/types';
 import { LiveryCard, LiveryCardSkeleton } from '@/components/LiveryCard';
 
-const DEFAULT_SLIDES = [
-  'https://images.pexels.com/photos/29586609/pexels-photo-29586609.jpeg?auto=compress&cs=tinysrgb&w=1280&q=75',
-  'https://images.pexels.com/photos/32699581/pexels-photo-32699581.jpeg?auto=compress&cs=tinysrgb&w=1280&q=75',
-  'https://images.pexels.com/photos/12202915/pexels-photo-12202915.jpeg?auto=compress&cs=tinysrgb&w=1280&q=75',
-];
-
 function StatCounter({ value, label, suffix = '' }: { value: number; label: string; suffix?: string }) {
   const { ref, inView } = useInView<HTMLDivElement>();
   const n = useCountUp(value, 2000, inView);
@@ -72,9 +66,7 @@ export function HomePage() {
   const [activeTournament, setActiveTournament] = useState<Tournament | null>(null);
   const [loadingData, setLoadingData] = useState(true);
 
-  const slides = customSlides.length > 0
-    ? customSlides.map((s) => s.image_url)
-    : DEFAULT_SLIDES;
+  const slides = customSlides.map((s) => s.image_url);
 
   useEffect(() => {
     if (slides.length <= 1) return;
@@ -127,10 +119,11 @@ export function HomePage() {
 
   return (
     <div>
-      {/* HERO */}
-      <section className="relative h-screen min-h-[640px] overflow-hidden">
+      {/* 1. HERO SECTION */}
+      <section className="relative h-screen min-h-[640px] overflow-hidden bg-ink-900">
         <div className="absolute inset-0">
-          {slides.map((src, i) => (
+          {/* Real database slides when available */}
+          {slides.length > 0 && slides.map((src, i) => (
             <div
               key={src + i}
               className="absolute inset-0 transition-opacity duration-[1500ms]"
@@ -138,7 +131,7 @@ export function HomePage() {
             >
               <img
                 src={src}
-                alt=""
+                alt="BUSSID Fleet"
                 fetchPriority={i === 0 ? 'high' : 'low'}
                 loading={i === 0 ? 'eager' : 'lazy'}
                 decoding="async"
@@ -146,12 +139,15 @@ export function HomePage() {
               />
             </div>
           ))}
-          <div className="absolute inset-0 bg-gradient-to-b from-ink-900/70 via-ink-900/50 to-ink-900" />
-          <div className="absolute inset-0 bg-gradient-to-r from-ink-900/80 via-transparent to-ink-900/40" />
-          <div className="absolute inset-0 grid-bg opacity-30" />
+
+          {/* Cinematic Gaming Gradient Mesh (Always active, no AI stock images while DB loads) */}
+          <div className="absolute inset-0 bg-gradient-to-b from-ink-900/90 via-ink-900/70 to-ink-900" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_20%_25%,rgba(124,255,0,0.12),transparent_70%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_85%_75%,rgba(255,94,0,0.08),transparent_70%)]" />
+          <div className="absolute inset-0 grid-bg opacity-25" />
         </div>
 
-        <Particles count={50} className="absolute inset-0" />
+        <Particles count={40} className="absolute inset-0" />
 
         <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-full flex flex-col justify-center">
           <motion.div
