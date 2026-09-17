@@ -203,10 +203,10 @@ export function HomePage() {
             </Link>
             <Link to="/convoys" className="btn-ghost group border-neon/40 text-neon hover:bg-neon/10">
               <Radio className="h-4 w-4 animate-pulse" />
-              Join Convoys (Mabar)
+              Join Convoy (Multi)
             </Link>
             <Link to="/groups" className="btn-ghost group">
-              Join WhatsApp
+              Join Community
               <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Link>
           </motion.div>

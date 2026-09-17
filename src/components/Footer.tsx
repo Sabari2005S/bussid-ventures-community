@@ -75,11 +75,14 @@ export function Footer() {
               {[
                 { label: 'Home', to: '/' },
                 { label: 'Livery Collection', to: '/livery' },
-                { label: 'Tournaments', to: '/tournament' },
+                { label: 'Multiplayer Convoys', to: '/convoys' },
+                { label: 'Livery Requests (Wanted)', to: '/requests' },
+                { label: 'Upload Your Livery', to: '/upload-livery' },
+                { label: 'Tournaments Arena', to: '/tournament' },
                 { label: 'About Us', to: '/about' },
                 { label: 'Contact', to: '/contact' },
               ].map((l) => (
-                <li key={l.to}>
+                <li key={l.label}>
                   <Link to={l.to} className="text-bone/50 hover:text-white transition-colors text-sm">
                     {l.label}
                   </Link>
@@ -92,11 +95,13 @@ export function Footer() {
             <h4 className="font-display text-xs uppercase tracking-[0.2em] text-bone/80 font-bold mb-4">Community</h4>
             <ul className="space-y-2.5 font-body">
               {[
-                { label: 'WhatsApp Group', to: '/groups' },
-                { label: 'Telegram Channel', to: '/groups' },
-                { label: 'Discord Server', to: '/groups' },
-                { label: 'Tournaments', to: '/tournament' },
-                { label: 'Admin Panel', to: '/admin' },
+                { label: 'WhatsApp Groups', to: '/groups' },
+                { label: 'Multiplayer Convoys', to: '/convoys' },
+                { label: 'Livery Request Board', to: '/requests' },
+                { label: 'Community Hub', to: '/groups' },
+                { label: 'Tournaments Arena', to: '/tournament' },
+                { label: 'Telegram & Discord', to: '/groups' },
+                { label: 'Admin Portal', to: '/admin' },
               ].map((l) => (
                 <li key={l.label}>
                   <Link to={l.to} className="text-bone/50 hover:text-white transition-colors text-sm">

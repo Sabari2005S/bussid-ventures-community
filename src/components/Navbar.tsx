@@ -84,20 +84,20 @@ export function Navbar() {
               })}
             </div>
 
-            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <div className="flex items-center gap-1 sm:gap-2 shrink-0">
               <NotificationBell />
               <button
                 onClick={() => setSearchOpen((s) => !s)}
-                className="p-1.5 sm:p-2 text-bone/70 hover:text-white transition-colors"
+                className="p-1.5 sm:p-2 text-bone/70 hover:text-white transition-colors shrink-0"
                 aria-label="Search"
               >
                 <Search className="h-5 w-5" />
               </button>
               {user ? (
-                <div className="flex items-center gap-1.5 sm:gap-2">
+                <div className="flex items-center gap-1 sm:gap-2 shrink-0">
                   <Link
                     to="/my-uploads"
-                    className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-display font-bold uppercase tracking-wider text-neon border border-neon/30 hover:bg-neon/10 transition-all rounded"
+                    className="hidden md:flex items-center gap-1 px-2.5 py-1.5 text-xs font-display font-bold uppercase tracking-wider text-neon border border-neon/30 hover:bg-neon/10 transition-all rounded"
                     title={user.email ?? 'Account'}
                   >
                     <User className="h-3.5 w-3.5 shrink-0" />
@@ -107,7 +107,7 @@ export function Navbar() {
                   </Link>
                   <Link
                     to="/my-downloads"
-                    className="p-1.5 sm:p-2 text-bone/70 hover:text-neon transition-colors"
+                    className="hidden sm:flex p-1.5 sm:p-2 text-bone/70 hover:text-neon transition-colors"
                     aria-label="My Downloads"
                     title="My Downloads"
                   >
@@ -115,18 +115,18 @@ export function Navbar() {
                   </Link>
                   <button
                     onClick={() => signOut()}
-                    className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 text-xs font-display font-bold uppercase tracking-wider text-red-400 border border-red-500/30 hover:bg-red-500/10 hover:text-red-300 transition-all shrink-0 rounded"
+                    className="hidden sm:flex items-center gap-1 px-2 sm:px-2.5 py-1.5 text-xs font-display font-bold uppercase tracking-wider text-red-400 border border-red-500/30 hover:bg-red-500/10 hover:text-red-300 transition-all shrink-0 rounded"
                     aria-label="Sign out"
                     title="Log Out"
                   >
                     <LogOut className="h-3.5 w-3.5 shrink-0" />
-                    <span className="hidden sm:inline">Log Out</span>
+                    <span>Log Out</span>
                   </button>
                 </div>
               ) : (
                 <Link
                   to="/login"
-                  className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-display font-bold uppercase tracking-wider text-neon border border-neon/30 hover:bg-neon/10 transition-all rounded"
+                  className="hidden sm:flex items-center gap-1 px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-display font-bold uppercase tracking-wider text-neon border border-neon/30 hover:bg-neon/10 transition-all rounded shrink-0"
                 >
                   <LogIn className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   <span>Sign In</span>
@@ -141,7 +141,7 @@ export function Navbar() {
               </Link>
               <button
                 onClick={() => setOpen(true)}
-                className="lg:hidden p-2 text-bone"
+                className="lg:hidden p-2 text-bone hover:text-neon transition-colors shrink-0 focus:outline-none"
                 aria-label="Open menu"
               >
                 <Menu className="h-6 w-6" />
@@ -188,85 +188,128 @@ export function Navbar() {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="absolute right-0 top-0 h-full w-full max-w-sm glass-strong p-6"
+              className="absolute right-0 top-0 h-full w-full max-w-sm glass-strong p-6 overflow-y-auto overscroll-contain flex flex-col justify-between"
             >
-              <div className="flex items-center justify-between mb-12">
-                <span className="font-display font-black text-neon tracking-wider">MENU</span>
-                <button onClick={() => setOpen(false)} className="p-2 text-bone hover:text-neon">
-                  <X className="h-6 w-6" />
-                </button>
-              </div>
-              <div className="flex flex-col gap-1">
-                {NAV.map((item, i) => {
-                  const active = location.pathname === item.to;
-                  return (
-                    <motion.div
-                      key={item.to}
-                      initial={{ x: 40, opacity: 0 }}
-                      animate={{ x: 0, opacity: 1 }}
-                      transition={{ delay: 0.05 * i }}
-                    >
-                      <Link
-                        to={item.to}
-                        className={`block py-4 font-display text-2xl font-bold uppercase tracking-wider border-b border-white/5 transition-colors ${
-                          active ? 'text-neon' : 'text-bone/70'
-                        }`}
-                      >
-                        {item.label}
-                      </Link>
-                    </motion.div>
-                  );
-                })}
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <span className="font-display font-black text-neon tracking-wider">NAVIGATION</span>
+                  <button onClick={() => setOpen(false)} className="p-2 text-bone hover:text-neon">
+                    <X className="h-6 w-6" />
+                  </button>
+                </div>
+
+                {/* User card when signed in on mobile */}
                 {user ? (
-                  <>
-                    <Link
-                      to="/my-uploads"
-                      className="mt-8 flex items-center gap-2 py-4 font-display text-lg font-bold uppercase tracking-wider text-neon"
-                    >
-                      <User className="h-5 w-5" />
-                      My Uploads
-                    </Link>
-                    <Link
-                      to="/my-downloads"
-                      className="flex items-center gap-2 py-4 font-display text-lg font-bold uppercase tracking-wider text-neon"
-                    >
-                      <HardDrive className="h-5 w-5" />
-                      My Downloads
-                    </Link>
+                  <div className="p-3 mb-6 glass border border-neon/30 rounded flex items-center justify-between">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="h-9 w-9 rounded-full bg-neon/10 border border-neon/40 text-neon font-display font-bold text-sm flex items-center justify-center shrink-0 uppercase">
+                        {user.email?.slice(0, 2) ?? 'U'}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-display font-bold text-bone truncate">{user.email?.split('@')[0]}</div>
+                        <div className="text-[10px] font-mono text-neon/80 truncate">{user.email}</div>
+                      </div>
+                    </div>
                     <button
-                      onClick={() => signOut()}
-                      className="flex items-center gap-2 py-4 font-display text-lg font-bold uppercase tracking-wider text-bone/50"
+                      onClick={() => { setOpen(false); signOut(); }}
+                      className="p-1.5 text-red-400 hover:text-red-300 border border-red-500/30 hover:bg-red-500/10 rounded flex items-center gap-1 text-[10px] font-mono uppercase"
+                      title="Sign Out"
                     >
-                      <LogOut className="h-5 w-5" />
-                      Sign Out
+                      <LogOut className="h-3.5 w-3.5" />
+                      Exit
                     </button>
-                  </>
+                  </div>
                 ) : (
                   <Link
                     to="/login"
-                    className="mt-8 flex items-center gap-2 py-4 font-display text-lg font-bold uppercase tracking-wider text-neon"
+                    onClick={() => setOpen(false)}
+                    className="mb-6 flex items-center justify-center gap-2 py-3 px-4 font-display text-sm font-bold uppercase tracking-wider text-ink-900 bg-neon hover:bg-neon-bright transition-all rounded shadow-neon-sm"
                   >
-                    <LogIn className="h-5 w-5" />
-                    Sign In
+                    <LogIn className="h-4 w-4" />
+                    Sign In / Register
                   </Link>
                 )}
-                <Link
-                  to="/admin"
-                  className="mt-4 flex items-center gap-2 py-4 font-display text-lg font-bold uppercase tracking-wider text-flame"
-                >
-                  <Shield className="h-5 w-5" />
-                  Admin Dashboard
-                </Link>
-                <button
-                  onClick={() => {
-                    setOpen(false);
-                    window.dispatchEvent(new CustomEvent('trigger-pwa-install'));
-                  }}
-                  className="mt-4 flex items-center gap-2 py-4 font-display text-lg font-bold uppercase tracking-wider text-neon border-t border-white/10 w-full text-left"
-                >
-                  <Smartphone className="h-5 w-5" />
-                  Install App (Android)
-                </button>
+
+                <div className="flex flex-col gap-1">
+                  {NAV.map((item, i) => {
+                    const active = location.pathname === item.to;
+                    return (
+                      <motion.div
+                        key={item.to}
+                        initial={{ x: 20, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        transition={{ delay: 0.03 * i }}
+                      >
+                        <Link
+                          to={item.to}
+                          onClick={() => setOpen(false)}
+                          className={`block py-3 font-display text-xl font-bold uppercase tracking-wider border-b border-white/5 transition-colors ${
+                            active ? 'text-neon pl-2 border-l-2 border-l-neon' : 'text-bone/70 hover:text-bone'
+                          }`}
+                        >
+                          {item.label}
+                        </Link>
+                      </motion.div>
+                    );
+                  })}
+
+                  <Link
+                    to="/requests"
+                    onClick={() => setOpen(false)}
+                    className="block py-3 font-display text-xl font-bold uppercase tracking-wider border-b border-white/5 text-bone/70 hover:text-bone"
+                  >
+                    Livery Requests
+                  </Link>
+
+                  <Link
+                    to="/upload-livery"
+                    onClick={() => setOpen(false)}
+                    className="block py-3 font-display text-xl font-bold uppercase tracking-wider border-b border-white/5 text-bone/70 hover:text-bone"
+                  >
+                    Upload Livery
+                  </Link>
+
+                  {user && (
+                    <>
+                      <Link
+                        to="/my-uploads"
+                        onClick={() => setOpen(false)}
+                        className="mt-4 flex items-center gap-2.5 py-3 font-display text-base font-bold uppercase tracking-wider text-neon hover:text-neon-bright"
+                      >
+                        <User className="h-4 w-4" />
+                        My Uploads
+                      </Link>
+                      <Link
+                        to="/my-downloads"
+                        onClick={() => setOpen(false)}
+                        className="flex items-center gap-2.5 py-3 font-display text-base font-bold uppercase tracking-wider text-neon hover:text-neon-bright"
+                      >
+                        <HardDrive className="h-4 w-4" />
+                        My Downloads
+                      </Link>
+                    </>
+                  )}
+
+                  <Link
+                    to="/admin"
+                    onClick={() => setOpen(false)}
+                    className="mt-2 flex items-center gap-2.5 py-3 font-display text-base font-bold uppercase tracking-wider text-flame hover:text-flame"
+                  >
+                    <Shield className="h-4 w-4" />
+                    Admin Portal
+                  </Link>
+
+                  <button
+                    onClick={() => {
+                      setOpen(false);
+                      window.dispatchEvent(new CustomEvent('trigger-pwa-install'));
+                    }}
+                    className="mt-4 mb-6 flex items-center gap-2.5 py-3 font-display text-base font-bold uppercase tracking-wider text-neon border-t border-white/10 w-full text-left"
+                  >
+                    <Smartphone className="h-4 w-4" />
+                    Install App (Android)
+                  </button>
+                </div>
               </div>
             </motion.div>
           </motion.div>
