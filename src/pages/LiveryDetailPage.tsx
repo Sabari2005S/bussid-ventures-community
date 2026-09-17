@@ -4,15 +4,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Download, User, Calendar, Tag, Share2, Flag, Eye, CheckCircle,
   Heart, Star, MessageCircle, Send, Edit2, Trash2, Reply, ChevronDown, X, Link2, BadgeCheck,
+  Sparkles,
 } from 'lucide-react';
 import {
   supabase, publicImageUrl, downloadLiveryFile, getLiveryGallery,
   getLiveryStats, toggleLike, hasUserLiked, submitRating, getUserRating,
   getComments, postComment, updateComment, deleteComment, toggleCommentLike,
   hasUserLikedComment, trackShare, reportContent, trackDownload, getVerifiedCreatorEmails,
+  getRelatedLiveries,
   type LiveryGalleryImage, type LiveryStats, type CommentData,
 } from '@/lib/supabase';
 import type { Livery } from '@/lib/types';
+import { LiveryCard } from '@/components/LiveryCard';
 import { useToast } from '@/components/Toast';
 import { useAuth } from '@/context/AuthContext';
 
@@ -23,8 +26,10 @@ export function LiveryDetailPage() {
   const { user, session } = useAuth();
   const [livery, setLivery] = useState<Livery | null>(null);
   const [gallery, setGallery] = useState<LiveryGalleryImage[]>([]);
+  const [relatedLiveries, setRelatedLiveries] = useState<Livery[]>([]);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
+  const [downloadSuccess, setDownloadSuccess] = useState(false);
   const [downloadCount, setDownloadCount] = useState(0);
   const [activeImage, setActiveImage] = useState(0);
   const [stats, setStats] = useState<LiveryStats>({ likes_count: 0, ratings_avg: 0, ratings_count: 0, comments_count: 0, shares_count: 0 });
@@ -72,8 +77,12 @@ export function LiveryDetailPage() {
       setLiked(await hasUserLiked(id, user.id));
       setUserRating(await getUserRating(id, user.id));
     }
-    const c = await getComments(id);
+    const [c, rel] = await Promise.all([
+      getComments(id),
+      getRelatedLiveries(id, data.vehicle_name, data.category_id, 4),
+    ]);
     setComments(buildCommentTree(c));
+    setRelatedLiveries(rel);
     setLoading(false);
   }, [id, user]);
 
@@ -90,6 +99,8 @@ export function LiveryDetailPage() {
       a.href = url; a.download = livery.file_name || `${livery.name}.zip`; a.target = '_blank';
       document.body.appendChild(a); a.click(); a.remove();
       trackDownload(livery.id, livery.file_name);
+      setDownloadSuccess(true);
+      setTimeout(() => setDownloadSuccess(false), 3000);
       toast('success', 'Download started successfully!');
     } else { toast('error', 'Download failed. Please try again.'); }
   }
@@ -371,9 +382,36 @@ export function LiveryDetailPage() {
             </div>
 
             <div className="flex gap-3 mb-4">
-              <button onClick={handleDownload} disabled={!livery.file_path || downloading} className="btn-neon flex-1 group disabled:opacity-30">
-                <Download className="h-5 w-5 transition-transform group-hover:translate-y-0.5" />
-                {downloading ? 'Preparing...' : 'Download Livery'}
+              <button
+                onClick={handleDownload}
+                disabled={!livery.file_path || downloading}
+                className={`flex-1 flex items-center justify-center gap-2.5 py-3.5 px-6 font-display font-black text-sm uppercase tracking-wider transition-all ${
+                  downloadSuccess
+                    ? 'bg-green-500 text-black shadow-neon-sm'
+                    : 'btn-neon disabled:opacity-30 disabled:cursor-not-allowed'
+                }`}
+              >
+                {downloading ? (
+                  <>
+                    <div className="h-4 w-4 border-2 border-ink-900 border-t-transparent rounded-full animate-spin" />
+                    Preparing Download...
+                  </>
+                ) : downloadSuccess ? (
+                  <>
+                    <CheckCircle className="h-5 w-5" />
+                    Download Started ✓
+                  </>
+                ) : (
+                  <>
+                    <Download className="h-5 w-5 transition-transform group-hover:translate-y-0.5" />
+                    Download Livery
+                    {livery.file_name && (
+                      <span className="opacity-70 text-xs font-mono font-normal">
+                        ({livery.file_name.split('.').pop()?.toUpperCase()})
+                      </span>
+                    )}
+                  </>
+                )}
               </button>
             </div>
 
@@ -390,19 +428,27 @@ export function LiveryDetailPage() {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="glass p-3">
-                <div className="font-mono text-[10px] uppercase tracking-widest text-bone/40 mb-1">Creator</div>
-                <div className="flex items-center gap-1.5 text-bone font-body flex-wrap">
-                  <User className="h-4 w-4 text-neon" />
-                  <span>{livery.creator}</span>
-                  {isCreatorVerified && (
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-400/10 text-amber-400 border border-amber-400/30">
-                      <BadgeCheck className="w-3.5 h-3.5" />
-                      Verified Artist
-                    </span>
-                  )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+              <div className="glass p-3 flex flex-col justify-between">
+                <div>
+                  <div className="font-mono text-[10px] uppercase tracking-widest text-bone/40 mb-1">Creator</div>
+                  <div className="flex items-center gap-1.5 text-bone font-body flex-wrap mb-2">
+                    <User className="h-4 w-4 text-neon" />
+                    <span className="font-semibold">{livery.creator}</span>
+                    {isCreatorVerified && (
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-400/10 text-amber-400 border border-amber-400/30">
+                        <BadgeCheck className="w-3.5 h-3.5" />
+                        Verified Artist
+                      </span>
+                    )}
+                  </div>
                 </div>
+                <Link
+                  to={`/livery?creator=${encodeURIComponent(livery.creator)}`}
+                  className="text-xs text-neon hover:underline font-mono uppercase tracking-wider inline-flex items-center gap-1 mt-1"
+                >
+                  More by this creator ➔
+                </Link>
               </div>
               <div className="glass p-3">
                 <div className="font-mono text-[10px] uppercase tracking-widest text-bone/40 mb-1">Upload Date</div>
@@ -411,6 +457,28 @@ export function LiveryDetailPage() {
             </div>
           </motion.div>
         </div>
+
+        {/* RELATED LIVERIES SECTION */}
+        {relatedLiveries.length > 0 && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mt-14 pt-8 border-t border-white/10">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-neon" />
+                <h2 className="font-display text-xl font-black text-bone uppercase tracking-wider">
+                  Related Fleet & Similar Liveries
+                </h2>
+              </div>
+              <Link to="/livery" className="text-xs text-neon hover:underline font-mono uppercase tracking-wider">
+                Explore All ➔
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {relatedLiveries.map((item, idx) => (
+                <LiveryCard key={item.id} livery={item} index={idx} />
+              ))}
+            </div>
+          </motion.div>
+        )}
 
         {/* COMMENTS SECTION */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mt-12">

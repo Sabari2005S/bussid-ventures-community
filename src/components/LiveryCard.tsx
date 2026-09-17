@@ -3,27 +3,31 @@ import { Link } from 'react-router-dom';
 import { Download, Eye, User, Heart, Star, BadgeCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { Livery } from '@/lib/types';
-import { publicImageUrl, downloadLiveryFile, getLiveryStats, getVerifiedCreatorEmails, type LiveryStats } from '@/lib/supabase';
+import { publicImageUrl, downloadLiveryFile, getLiveryStats, getVerifiedCreatorEmails, trackDownload, type LiveryStats } from '@/lib/supabase';
 
 export function LiveryCard({ livery, index = 0 }: { livery: Livery; index?: number }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [tilt, setTilt] = useState({ rx: 0, ry: 0 });
   const [downloading, setDownloading] = useState(false);
+  const [downloadSuccess, setDownloadSuccess] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
   const [stats, setStats] = useState<LiveryStats>({ likes_count: 0, ratings_avg: 0, ratings_count: 0, comments_count: 0, shares_count: 0 });
 
   useEffect(() => {
+    let mounted = true;
     (async () => {
       const [s, verified] = await Promise.all([
         getLiveryStats(livery.id),
         getVerifiedCreatorEmails(),
       ]);
+      if (!mounted) return;
       setStats(s);
       if (livery.creator) {
         const c = livery.creator.toLowerCase().trim();
         setIsVerified(verified.has(c) || verified.has(c.split('@')[0]));
       }
     })();
+    return () => { mounted = false; };
   }, [livery.id, livery.creator]);
 
   function onMove(e: React.MouseEvent) {
@@ -52,6 +56,9 @@ export function LiveryCard({ livery, index = 0 }: { livery: Livery; index?: numb
       document.body.appendChild(a);
       a.click();
       a.remove();
+      trackDownload(livery.id, livery.file_name);
+      setDownloadSuccess(true);
+      setTimeout(() => setDownloadSuccess(false), 2500);
     }
   }
 
@@ -149,10 +156,14 @@ export function LiveryCard({ livery, index = 0 }: { livery: Livery; index?: numb
             <button
               onClick={handleDownload}
               disabled={!livery.file_path || downloading}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-display font-bold uppercase tracking-wider text-ink-900 bg-neon/80 hover:bg-neon disabled:opacity-30 disabled:cursor-not-allowed transition-all group-hover:translate-x-0.5"
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-display font-bold uppercase tracking-wider transition-all ${
+                downloadSuccess
+                  ? 'bg-green-500 text-black shadow-neon-sm'
+                  : 'text-ink-900 bg-neon/80 hover:bg-neon disabled:opacity-30 disabled:cursor-not-allowed group-hover:translate-x-0.5'
+              }`}
             >
-              <Download className="h-3.5 w-3.5 transition-transform group-hover:translate-y-0.5" />
-              {downloading ? '...' : 'Download'}
+              <Download className={`h-3.5 w-3.5 transition-transform ${downloading ? 'animate-bounce' : 'group-hover:translate-y-0.5'}`} />
+              {downloading ? 'Preparing...' : downloadSuccess ? 'Saved ✓' : 'Download'}
             </button>
           </div>
         </div>
