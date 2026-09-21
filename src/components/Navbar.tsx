@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, Search, Bus, Shield, LogIn, LogOut, User, HardDrive, Smartphone, UserPlus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { NotificationBell } from '@/components/NotificationBell';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth, isFounderEmail } from '@/context/AuthContext';
 
 const NAV = [
   { label: 'Home', to: '/' },
@@ -22,7 +22,8 @@ export function Navbar() {
   const [query, setQuery] = useState('');
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user, adminProfile, signOut } = useAuth();
+  const isAdminOrFounder = isFounderEmail(user?.email) || adminProfile?.role === 'admin' || adminProfile?.role === 'founder';
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -141,13 +142,26 @@ export function Navbar() {
                   </Link>
                 </div>
               )}
-              <Link
-                to="/admin"
-                className="hidden sm:flex items-center gap-1 px-2.5 sm:px-3 py-1.5 text-xs font-display font-bold uppercase tracking-wider text-flame border border-flame/30 hover:bg-flame/10 transition-all rounded shrink-0"
-              >
-                <Shield className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                <span>Admin</span>
-              </Link>
+              {/* Distinct Admin Access: Only show Admin button to Admins/Founders, or discreetly when logged out */}
+              {isAdminOrFounder ? (
+                <Link
+                  to="/admin/dashboard"
+                  className="hidden sm:flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-display font-bold uppercase tracking-wider text-flame border border-flame/40 bg-flame/10 hover:bg-flame/20 transition-all rounded shrink-0 shadow-[0_0_8px_rgba(255,75,43,0.2)]"
+                  title="Admin Control Panel"
+                >
+                  <Shield className="h-3.5 w-3.5 text-flame" />
+                  <span>Admin Panel</span>
+                </Link>
+              ) : !user ? (
+                <Link
+                  to="/admin"
+                  className="hidden sm:flex items-center gap-1 px-2.5 sm:px-3 py-1.5 text-xs font-display font-bold uppercase tracking-wider text-flame/70 hover:text-flame border border-flame/20 hover:border-flame/40 transition-all rounded shrink-0"
+                  title="Admin Login"
+                >
+                  <Shield className="h-3.5 w-3.5" />
+                  <span>Admin</span>
+                </Link>
+              ) : null}
               <button
                 onClick={() => setOpen(true)}
                 className="lg:hidden p-2 text-bone hover:text-neon transition-colors shrink-0 focus:outline-none"
@@ -309,14 +323,16 @@ export function Navbar() {
                     </>
                   )}
 
-                  <Link
-                    to="/admin"
-                    onClick={() => setOpen(false)}
-                    className="mt-2 flex items-center gap-2.5 py-3 font-display text-base font-bold uppercase tracking-wider text-flame hover:text-flame"
-                  >
-                    <Shield className="h-4 w-4" />
-                    Admin Portal
-                  </Link>
+                  {(isAdminOrFounder || !user) && (
+                    <Link
+                      to={isAdminOrFounder ? '/admin/dashboard' : '/admin'}
+                      onClick={() => setOpen(false)}
+                      className="mt-2 flex items-center gap-2.5 py-3 font-display text-base font-bold uppercase tracking-wider text-flame hover:text-flame"
+                    >
+                      <Shield className="h-4 w-4" />
+                      {isAdminOrFounder ? 'Admin Dashboard' : 'Admin Portal'}
+                    </Link>
+                  )}
 
                   <button
                     onClick={() => {
