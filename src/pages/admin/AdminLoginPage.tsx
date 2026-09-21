@@ -53,13 +53,14 @@ export function AdminLoginPage() {
         setLoading(false);
         return;
       }
-      const { error, profile } = await signUp(email, password);
+      // Explicitly register as 'admin' requesting founder approval
+      const { error, profile } = await signUp(email, password, 'admin');
       setLoading(false);
       if (error) {
         toast('error', error);
       } else {
         if (profile && !profile.approved) {
-          toast('success', 'Account created! Waiting for founder approval.');
+          toast('success', 'Admin application submitted! Waiting for founder approval.');
         } else {
           toast('success', 'Account created! Welcome, Admin.');
         }
@@ -77,13 +78,25 @@ export function AdminLoginPage() {
         animate={{ opacity: 1, y: 0 }}
         className="relative z-10 w-full max-w-md mx-4"
       >
+        {/* Banner for normal players */}
+        <div className="glass p-3 mb-4 border border-neon/20 flex items-center justify-between text-xs font-body">
+          <span className="text-bone/70">Looking for normal player account?</span>
+          <a
+            href="/login?mode=signup"
+            className="text-neon font-bold hover:underline flex items-center gap-1"
+          >
+            Player Sign Up
+            <ArrowRight className="h-3 w-3" />
+          </a>
+        </div>
+
         <div className="hud-panel p-8">
           <div className="text-center mb-8">
-            <div className="inline-flex p-3 border border-neon/30 text-neon mb-4 animate-pulse-glow">
+            <div className="inline-flex p-3 border border-flame/30 text-flame mb-4 animate-pulse-glow">
               <Shield className="h-8 w-8" />
             </div>
             <h1 className="font-display text-2xl font-black text-bone tracking-wider">
-              {mode === 'login' ? 'ADMIN ACCESS' : 'CREATE ADMIN'}
+              {mode === 'login' ? 'ADMIN ACCESS' : 'APPLY FOR ADMIN'}
             </h1>
             <p className="text-bone/40 font-mono text-xs uppercase tracking-widest mt-2">
               BUSSID Ventures Control Center
@@ -96,7 +109,7 @@ export function AdminLoginPage() {
               type="button"
               onClick={() => setMode('login')}
               className={`flex-1 flex items-center justify-center gap-2 py-2.5 font-display text-xs font-bold uppercase tracking-wider transition-all ${
-                mode === 'login' ? 'bg-neon/10 text-neon' : 'text-bone/40 hover:text-bone'
+                mode === 'login' ? 'bg-flame/10 text-flame border-b-2 border-flame' : 'text-bone/40 hover:text-bone'
               }`}
             >
               <LogIn className="h-3.5 w-3.5" />
@@ -106,11 +119,11 @@ export function AdminLoginPage() {
               type="button"
               onClick={() => setMode('signup')}
               className={`flex-1 flex items-center justify-center gap-2 py-2.5 font-display text-xs font-bold uppercase tracking-wider transition-all ${
-                mode === 'signup' ? 'bg-neon/10 text-neon' : 'text-bone/40 hover:text-bone'
+                mode === 'signup' ? 'bg-flame/10 text-flame border-b-2 border-flame' : 'text-bone/40 hover:text-bone'
               }`}
             >
               <UserPlus className="h-3.5 w-3.5" />
-              Create Account
+              Apply Admin
             </button>
           </div>
 
@@ -146,8 +159,8 @@ export function AdminLoginPage() {
                 <p className="mt-1.5 text-bone/30 text-xs font-mono">Minimum 6 characters</p>
               )}
             </div>
-            <button type="submit" disabled={loading} className="btn-neon w-full group disabled:opacity-50">
-              {loading ? 'Please wait...' : mode === 'login' ? 'Enter Dashboard' : 'Create Account'}
+            <button type="submit" disabled={loading} className="btn-flame w-full group disabled:opacity-50">
+              {loading ? 'Please wait...' : mode === 'login' ? 'Enter Dashboard' : 'Submit Admin Application'}
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </button>
           </form>
@@ -155,26 +168,34 @@ export function AdminLoginPage() {
           <p className="mt-6 text-center text-bone/30 text-xs font-body">
             {mode === 'login' ? (
               <>
-                No account yet?{' '}
-                <button onClick={() => setMode('signup')} className="text-neon hover:underline">
-                  Create one
+                Need admin access?{' '}
+                <button onClick={() => setMode('signup')} className="text-flame hover:underline">
+                  Apply here
                 </button>
               </>
             ) : (
               <>
-                Already have an account?{' '}
-                <button onClick={() => setMode('login')} className="text-neon hover:underline">
+                Already an admin?{' '}
+                <button onClick={() => setMode('login')} className="text-flame hover:underline">
                   Sign in
                 </button>
               </>
             )}
           </p>
           {mode === 'signup' && (
-            <p className="mt-4 text-center text-bone/30 text-xs font-body">
-              The first account becomes the founder admin. All subsequent accounts require
-              founder approval before accessing the dashboard.
-            </p>
+            <div className="mt-4 p-3 bg-flame/5 border border-flame/20 text-center">
+              <p className="text-bone/60 text-xs font-body leading-relaxed">
+                Admin accounts require verification and approval by the Founder before granting control center access.
+              </p>
+            </div>
           )}
+
+          <div className="mt-6 pt-6 border-t border-white/5 text-center">
+            <a href="/login" className="inline-flex items-center gap-1.5 text-bone/40 hover:text-neon text-xs font-body transition-colors">
+              <LogIn className="h-3.5 w-3.5" />
+              Back to Player Sign In
+            </a>
+          </div>
         </div>
       </motion.div>
     </div>

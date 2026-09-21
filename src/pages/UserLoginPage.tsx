@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Bus, Lock, Mail, ArrowRight, UserPlus, LogIn, Shield } from 'lucide-react';
+import { Bus, Lock, Mail, ArrowRight, UserPlus, LogIn, Shield, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/Toast';
 import { Particles } from '@/components/Particles';
@@ -10,10 +10,19 @@ export function UserLoginPage() {
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
-  const [mode, setMode] = useState<'login' | 'signup'>('login');
+  const [searchParams] = useSearchParams();
+  const initialMode = searchParams.get('mode') === 'signup' ? 'signup' : 'login';
+  const [mode, setMode] = useState<'login' | 'signup'>(initialMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const qMode = searchParams.get('mode');
+    if (qMode === 'signup' || qMode === 'login') {
+      setMode(qMode);
+    }
+  }, [searchParams]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -33,12 +42,13 @@ export function UserLoginPage() {
         setLoading(false);
         return;
       }
-      const { error } = await signUp(email, password);
+      // Explicitly register as 'user' for instant community player access
+      const { error } = await signUp(email, password, 'user');
       setLoading(false);
       if (error) {
         toast('error', error);
       } else {
-        toast('success', 'Account created! You are now logged in.');
+        toast('success', 'Account created! Welcome to BUSSID Ventures.');
         navigate('/');
       }
     }
@@ -63,10 +73,10 @@ export function UserLoginPage() {
               </div>
             </Link>
             <h1 className="font-display text-2xl font-black text-bone tracking-wider">
-              {mode === 'login' ? 'WELCOME BACK' : 'CREATE ACCOUNT'}
+              {mode === 'login' ? 'PLAYER SIGN IN' : 'CREATE PLAYER ACCOUNT'}
             </h1>
             <p className="text-bone/40 font-mono text-xs uppercase tracking-widest mt-2">
-              {mode === 'login' ? 'Sign in to upload & join tournaments' : 'Join the BUSSID community'}
+              {mode === 'login' ? 'Sign in to upload liveries & join convoys' : 'Instant free player access to the community'}
             </p>
           </div>
 
@@ -90,7 +100,7 @@ export function UserLoginPage() {
               }`}
             >
               <UserPlus className="h-3.5 w-3.5" />
-              Sign Up
+              Register
             </button>
           </div>
 
@@ -123,11 +133,11 @@ export function UserLoginPage() {
                 />
               </div>
               {mode === 'signup' && (
-                <p className="mt-1.5 text-bone/30 text-xs font-mono">Minimum 6 characters</p>
+                <p className="mt-1.5 text-bone/30 text-xs font-mono">Minimum 6 characters • Instant activation</p>
               )}
             </div>
             <button type="submit" disabled={loading} className="btn-neon w-full group disabled:opacity-50">
-              {loading ? 'Please wait...' : mode === 'login' ? 'Sign In' : 'Create Account'}
+              {loading ? 'Please wait...' : mode === 'login' ? 'Sign In' : 'Create Player Account'}
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </button>
           </form>
@@ -137,7 +147,7 @@ export function UserLoginPage() {
               <>
                 No account yet?{' '}
                 <button onClick={() => setMode('signup')} className="text-neon hover:underline">
-                  Sign up
+                  Create Player Account
                 </button>
               </>
             ) : (
@@ -151,9 +161,10 @@ export function UserLoginPage() {
           </p>
 
           <div className="mt-6 pt-6 border-t border-white/5 text-center">
-            <Link to="/admin" className="inline-flex items-center gap-1.5 text-bone/30 hover:text-flame text-xs font-body transition-colors">
+            <p className="text-bone/40 text-xs font-body mb-1.5">Staff or Administrator?</p>
+            <Link to="/admin" className="inline-flex items-center gap-1.5 text-bone/50 hover:text-flame text-xs font-body transition-colors">
               <Shield className="h-3.5 w-3.5" />
-              Admin Login
+              Admin Portal
             </Link>
           </div>
         </div>

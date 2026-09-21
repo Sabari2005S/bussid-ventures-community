@@ -1,8 +1,8 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Pencil, Trash2, Plus, Download, X, Star, StarOff } from 'lucide-react';
-import { supabase, publicImageUrl } from '@/lib/supabase';
+import { Pencil, Trash2, Plus, Download, X, Star, StarOff, Upload, Image as ImageIcon } from 'lucide-react';
+import { supabase, publicImageUrl, LIVERY_IMAGES_BUCKET } from '@/lib/supabase';
 import type { Livery, Category } from '@/lib/types';
 import { useToast } from '@/components/Toast';
 
@@ -198,6 +198,7 @@ function EditModal({
   onSave: (l: Livery) => void;
 }) {
   const toast = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     name: livery.name,
     vehicle_name: livery.vehicle_name,
@@ -207,10 +208,70 @@ function EditModal({
     badge: livery.badge ?? '',
     is_featured: livery.is_featured,
   });
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      toast('error', 'Invalid format. Use JPG, PNG, or WEBP.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast('error', 'Image too large. Maximum 5MB.');
+      return;
+    }
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  }
+
+  function handleClearNewImage() {
+    setImageFile(null);
+    if (imagePreview) {
+      URL.revokeObjectURL(imagePreview);
+      setImagePreview(null);
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  }
 
   async function save() {
     setSaving(true);
+    let newImagePath = livery.image_path;
+
+    if (imageFile) {
+      try {
+        const safeId = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+        const imgExt = imageFile.name.split('.').pop()?.toLowerCase() || 'jpg';
+        const imgPath = `${safeId}.${imgExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from(LIVERY_IMAGES_BUCKET)
+          .upload(imgPath, imageFile, { cacheControl: '3600', upsert: false });
+
+        if (uploadError) throw uploadError;
+
+        // Try to remove old image if it existed and is different
+        if (livery.image_path && livery.image_path !== imgPath) {
+          try {
+            await supabase.storage.from(LIVERY_IMAGES_BUCKET).remove([livery.image_path]);
+          } catch (delErr) {
+            console.warn('[AdminLiveries] Old image cleanup notice:', delErr);
+          }
+        }
+
+        newImagePath = imgPath;
+      } catch (err: unknown) {
+        setSaving(false);
+        const errMsg = err instanceof Error ? err.message : 'Unknown error';
+        toast('error', `Failed to upload image: ${errMsg}`);
+        return;
+      }
+    }
+
     const { data, error } = await supabase
       .from('liveries')
       .update({
@@ -221,15 +282,17 @@ function EditModal({
         description: form.description || null,
         badge: form.badge || null,
         is_featured: form.is_featured,
+        image_path: newImagePath,
       })
       .eq('id', livery.id)
       .select('*, category:categories(*)')
       .maybeSingle();
+
     setSaving(false);
     if (error || !data) {
       toast('error', error?.message ?? 'Update failed.');
     } else {
-      toast('success', 'Livery updated!');
+      toast('success', imageFile ? 'Livery and image updated!' : 'Livery updated!');
       onSave(data);
     }
   }
@@ -253,6 +316,64 @@ function EditModal({
           <button onClick={onClose} className="p-1 text-bone/40 hover:text-bone"><X className="h-5 w-5" /></button>
         </div>
         <div className="space-y-4">
+          {/* Image replacement section */}
+          <div>
+            <label className="block font-mono text-[10px] uppercase tracking-widest text-bone/40 mb-2">
+              Preview Image
+            </label>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-3 bg-ink-800/80 border border-white/10 rounded">
+              <div className="relative h-20 w-32 shrink-0 overflow-hidden bg-ink-900 border border-white/10 rounded">
+                <img
+                  src={imagePreview || publicImageUrl(livery.image_path) || ''}
+                  alt={livery.name}
+                  className="h-full w-full object-cover"
+                />
+                {imagePreview && (
+                  <span className="absolute top-1 right-1 px-1.5 py-0.5 bg-neon text-ink-900 font-mono text-[9px] font-black uppercase tracking-wider rounded">
+                    New
+                  </span>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-bone/70 font-body mb-2 truncate">
+                  {imageFile
+                    ? `Selected: ${imageFile.name} (${(imageFile.size / 1024).toFixed(0)} KB)`
+                    : 'Replace this livery\'s preview picture with a new image.'}
+                </p>
+                <div className="flex items-center gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={handleImageChange}
+                    className="hidden"
+                    id="edit-livery-image-input"
+                  />
+                  <label
+                    htmlFor="edit-livery-image-input"
+                    className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-display font-bold uppercase tracking-wider text-neon border border-neon/30 hover:bg-neon/10 transition-all rounded"
+                  >
+                    <Upload className="h-3.5 w-3.5" />
+                    {imageFile ? 'Choose Different Image' : 'Replace Image'}
+                  </label>
+                  {imageFile && (
+                    <button
+                      type="button"
+                      onClick={handleClearNewImage}
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-display font-bold uppercase tracking-wider text-bone/50 hover:text-red-400 hover:bg-red-500/10 transition-all rounded"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                      Reset
+                    </button>
+                  )}
+                </div>
+                <p className="text-[10px] font-mono text-bone/40 mt-1.5">
+                  JPG, PNG, or WEBP • Max 5MB
+                </p>
+              </div>
+            </div>
+          </div>
+
           <div>
             <label className="block font-mono text-[10px] uppercase tracking-widest text-bone/40 mb-2">Name</label>
             <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="input-hud" />

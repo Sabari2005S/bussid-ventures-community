@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, Search, Bus, Shield, LogIn, LogOut, User, HardDrive, Smartphone } from 'lucide-react';
+import { Menu, X, Search, Bus, Shield, LogIn, LogOut, User, HardDrive, Smartphone, UserPlus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { NotificationBell } from '@/components/NotificationBell';
 import { useAuth } from '@/context/AuthContext';
@@ -124,17 +124,26 @@ export function Navbar() {
                   </button>
                 </div>
               ) : (
-                <Link
-                  to="/login"
-                  className="hidden sm:flex items-center gap-1 px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-display font-bold uppercase tracking-wider text-neon border border-neon/30 hover:bg-neon/10 transition-all rounded shrink-0"
-                >
-                  <LogIn className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                  <span>Sign In</span>
-                </Link>
+                <div className="hidden sm:flex items-center gap-1.5 shrink-0">
+                  <Link
+                    to="/login"
+                    className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-display font-bold uppercase tracking-wider text-bone/70 hover:text-bone hover:bg-white/5 border border-white/10 transition-all rounded shrink-0"
+                  >
+                    <LogIn className="h-3.5 w-3.5" />
+                    <span>Sign In</span>
+                  </Link>
+                  <Link
+                    to="/login?mode=signup"
+                    className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 text-xs font-display font-bold uppercase tracking-wider text-ink-900 bg-neon hover:bg-neon-bright transition-all rounded shrink-0 shadow-neon-sm"
+                  >
+                    <UserPlus className="h-3.5 w-3.5" />
+                    <span>Register</span>
+                  </Link>
+                </div>
               )}
               <Link
                 to="/admin"
-                className="hidden sm:flex items-center gap-1 px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-display font-bold uppercase tracking-wider text-flame border border-flame/30 hover:bg-flame/10 transition-all rounded shrink-0"
+                className="hidden sm:flex items-center gap-1 px-2.5 sm:px-3 py-1.5 text-xs font-display font-bold uppercase tracking-wider text-flame border border-flame/30 hover:bg-flame/10 transition-all rounded shrink-0"
               >
                 <Shield className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 <span>Admin</span>
@@ -220,14 +229,24 @@ export function Navbar() {
                     </button>
                   </div>
                 ) : (
-                  <Link
-                    to="/login"
-                    onClick={() => setOpen(false)}
-                    className="mb-6 flex items-center justify-center gap-2 py-3 px-4 font-display text-sm font-bold uppercase tracking-wider text-ink-900 bg-neon hover:bg-neon-bright transition-all rounded shadow-neon-sm"
-                  >
-                    <LogIn className="h-4 w-4" />
-                    Sign In / Register
-                  </Link>
+                  <div className="mb-6 grid grid-cols-2 gap-2">
+                    <Link
+                      to="/login"
+                      onClick={() => setOpen(false)}
+                      className="flex items-center justify-center gap-1.5 py-2.5 px-3 font-display text-xs font-bold uppercase tracking-wider text-bone/80 border border-white/10 hover:bg-white/5 transition-all rounded"
+                    >
+                      <LogIn className="h-4 w-4" />
+                      Sign In
+                    </Link>
+                    <Link
+                      to="/login?mode=signup"
+                      onClick={() => setOpen(false)}
+                      className="flex items-center justify-center gap-1.5 py-2.5 px-3 font-display text-xs font-bold uppercase tracking-wider text-ink-900 bg-neon hover:bg-neon-bright transition-all rounded shadow-neon-sm"
+                    >
+                      <UserPlus className="h-4 w-4" />
+                      Register
+                    </Link>
+                  </div>
                 )}
 
                 <div className="flex flex-col gap-1">

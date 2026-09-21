@@ -30,14 +30,14 @@ export function AdminNotificationsPage() {
     loadProfiles();
   }, [loadProfiles]);
 
-  async function handleApprove(email: string) {
+  async function handleApprove(email: string, role: 'admin' | 'user' = 'admin') {
     setActionEmail(email);
-    const { error } = await approveAdminAccount(email);
+    const { error } = await approveAdminAccount(email, role);
     setActionEmail(null);
     if (error) {
       toast('error', error);
     } else {
-      toast('success', `${email} approved as admin.`);
+      toast('success', `${email} approved as ${role}.`);
       await loadProfiles();
     }
   }
@@ -111,19 +111,30 @@ export function AdminNotificationsPage() {
                   </div>
 
                   {isFounder ? (
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       <button
-                        onClick={() => handleApprove(p.email)}
+                        onClick={() => handleApprove(p.email, 'admin')}
+                        disabled={actionEmail === p.email}
+                        className="btn-flame text-xs px-3 py-2 disabled:opacity-50"
+                        title="Approve with full Admin privileges"
+                      >
+                        {actionEmail === p.email ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Shield className="h-3.5 w-3.5" />}
+                        Approve as Admin
+                      </button>
+                      <button
+                        onClick={() => handleApprove(p.email, 'user')}
                         disabled={actionEmail === p.email}
                         className="btn-neon text-xs px-3 py-2 disabled:opacity-50"
+                        title="Approve as standard Community Player"
                       >
                         {actionEmail === p.email ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-                        Approve
+                        Set as Player (User)
                       </button>
                       <button
                         onClick={() => handleReject(p.email)}
                         disabled={actionEmail === p.email}
-                        className="btn-flame text-xs px-3 py-2 disabled:opacity-50"
+                        className="btn-ghost text-xs px-3 py-2 text-red-400 hover:text-red-300 border border-red-500/30 hover:bg-red-500/10 disabled:opacity-50"
+                        title="Reject and delete account"
                       >
                         <X className="h-3.5 w-3.5" />
                         Reject

@@ -19,7 +19,7 @@ interface AuthContextValue {
   loading: boolean;
   adminProfile: AdminProfile | null;
   signIn: (email: string, password: string) => Promise<{ error: string | null; profile?: AdminProfile | null }>;
-  signUp: (email: string, password: string) => Promise<{ error: string | null; profile?: AdminProfile | null }>;
+  signUp: (email: string, password: string, role?: 'user' | 'admin') => Promise<{ error: string | null; profile?: AdminProfile | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -81,6 +81,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 console.warn('[BUSSID Ventures] Auto-sync founder profile notice:', upsertErr.message);
               }
             });
+        }
+      } else if (profile?.role === 'pending') {
+        // Auto-heal: If this user registered as a regular player/user, activate their user profile
+        const authUserMeta = user?.user_metadata || (await supabase.auth.getUser()).data.user?.user_metadata;
+        const requestedRole = authUserMeta?.role;
+        if (requestedRole === 'user' || !requestedRole) {
+          profile = {
+            ...profile,
+            role: 'user',
+            approved: true,
+          };
+          supabase.rpc('ensure_user_profile').catch(() => {
+            supabase
+              .from('admin_profiles')
+              .update({ role: 'user', approved: true })
+              .eq('id', uid)
+              .catch(() => {});
+          });
         }
       }
 
@@ -156,8 +174,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: null, profile };
   }
 
-  async function signUp(email: string, password: string): Promise<{ error: string | null; profile?: AdminProfile | null }> {
-    const { data, error } = await supabase.auth.signUp({ email, password });
+  async function signUp(
+    email: string,
+    password: string,
+    role: 'user' | 'admin' = 'user'
+  ): Promise<{ error: string | null; profile?: AdminProfile | null }> {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          role: role,
+        },
+      },
+    });
     if (error) {
       return { error: error.message, profile: null };
     }
@@ -166,6 +196,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(data.session);
       setUser(data.user);
       if (data.user?.id) {
+        if (role === 'user') {
+          // Immediately ensure user profile in DB
+          try {
+            await supabase.rpc('ensure_user_profile');
+          } catch {
+            try {
+              await supabase
+                .from('admin_profiles')
+                .upsert({
+                  id: data.user.id,
+                  email: data.user.email || email,
+                  role: 'user',
+                  approved: true,
+                });
+            } catch {}
+          }
+        }
         profile = await fetchProfile(data.user.id, data.user.email || email);
       }
     }
