@@ -9,6 +9,10 @@ import {
 import { useAuth } from '@/context/AuthContext';
 
 const NOTIF_ICONS: Record<string, string> = {
+  welcome: '🎉',
+  admin_approved: '🛡️',
+  account_approved: '✅',
+  livery_request: '🎨',
   livery_liked: '❤️',
   livery_rated: '⭐',
   new_comment: '💬',

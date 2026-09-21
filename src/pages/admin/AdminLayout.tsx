@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useAuth, isFounderEmail } from '@/context/AuthContext';
 import { Crown } from 'lucide-react';
+import { getAdminNotificationCounts, type AdminNotificationCounts } from '@/lib/supabase';
 
 const SIDEBAR = [
   { label: 'Dashboard', to: '/admin/dashboard', icon: LayoutDashboard },
@@ -42,7 +43,31 @@ export function AdminLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [notifCounts, setNotifCounts] = useState<AdminNotificationCounts>({
+    pendingAdmins: 0,
+    pendingLiveries: 0,
+    openLiveryRequests: 0,
+    reportsCount: 0,
+    total: 0,
+  });
+
   const isFounder = adminProfile?.role === 'founder' || isFounderEmail(user?.email);
+
+  useEffect(() => {
+    let mounted = true;
+    async function fetchCounts() {
+      const counts = await getAdminNotificationCounts();
+      if (mounted) {
+        setNotifCounts(counts);
+      }
+    }
+    fetchCounts();
+    const interval = setInterval(fetchCounts, 30000);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, [location.pathname]);
 
   // Only the founder has the power to manage users & admins
   const navigationItems = SIDEBAR.filter((item) => {
@@ -74,19 +99,27 @@ export function AdminLayout() {
       <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
         {navigationItems.map(({ label, to, icon: Icon }) => {
           const active = location.pathname === to;
+          const showBadge = label === 'Notifications' && notifCounts.total > 0;
           return (
             <Link
               key={to}
               to={to}
               onClick={() => setMobileOpen(false)}
-              className={`flex items-center gap-3 px-4 py-3 font-display text-sm font-bold uppercase tracking-wider transition-all ${
+              className={`flex items-center justify-between px-4 py-3 font-display text-sm font-bold uppercase tracking-wider transition-all ${
                 active
                   ? 'bg-neon/10 text-neon border-l-2 border-neon'
                   : 'text-bone/50 hover:text-bone hover:bg-white/5 border-l-2 border-transparent'
               }`}
             >
-              <Icon className="h-4 w-4" />
-              {label}
+              <div className="flex items-center gap-3">
+                <Icon className="h-4 w-4" />
+                <span>{label}</span>
+              </div>
+              {showBadge && (
+                <span className="px-1.5 py-0.5 text-[10px] font-mono font-bold bg-flame/20 text-flame border border-flame/40 rounded-full animate-pulse">
+                  {notifCounts.total > 99 ? '99+' : notifCounts.total}
+                </span>
+              )}
             </Link>
           );
         })}
@@ -141,6 +174,16 @@ export function AdminLayout() {
             <span className="font-mono text-xs uppercase tracking-widest text-bone/50 hidden sm:inline">System Online</span>
           </div>
           <div className="flex items-center gap-3">
+            <Link
+              to="/admin/notifications"
+              className="relative p-2 text-bone/60 hover:text-bone hover:bg-white/5 rounded transition-colors"
+              title="Admin Notifications"
+            >
+              <Bell className="h-4 w-4" />
+              {notifCounts.total > 0 && (
+                <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-flame animate-pulse" />
+              )}
+            </Link>
             <span className="font-mono text-xs text-bone/40 hidden sm:inline">{user?.email}</span>
             <Link to="/" className="font-display text-xs uppercase tracking-wider text-bone/50 hover:text-neon">
               View Site →

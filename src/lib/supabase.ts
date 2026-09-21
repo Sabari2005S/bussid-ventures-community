@@ -159,12 +159,74 @@ export async function getAllAdminProfiles(): Promise<AdminProfile[]> {
   }
 }
 
+export async function sendNotification(params: {
+  userId: string;
+  type: string;
+  title: string;
+  message: string;
+  referenceId?: string | null;
+}): Promise<void> {
+  try {
+    await supabase.rpc('create_notification', {
+      p_user_id: params.userId,
+      p_type: params.type,
+      p_title: params.title,
+      p_message: params.message,
+      p_reference_id: params.referenceId ?? null,
+    });
+  } catch {
+    try {
+      await supabase.from('notifications').insert({
+        user_id: params.userId,
+        type: params.type,
+        title: params.title,
+        message: params.message,
+        reference_id: params.referenceId ?? null,
+      });
+    } catch (err) {
+      console.warn('[Notifications] sendNotification notice:', err);
+    }
+  }
+}
+
 export async function approveAdminAccount(email: string, role: 'admin' | 'user' = 'admin'): Promise<{ error: string | null }> {
   const { error } = await supabase.rpc('approve_account', { p_email: email, p_role: role });
   if (error) {
     const fallback = await supabase.rpc('approve_admin', { p_email: email });
-    return { error: fallback.error ? fallback.error.message : null };
+    if (fallback.error) {
+      return { error: fallback.error.message };
+    }
   }
+
+  // Send welcome / approval notification to the user
+  try {
+    const { data: userProfile } = await supabase
+      .from('admin_profiles')
+      .select('id')
+      .eq('email', email)
+      .maybeSingle();
+
+    if (userProfile?.id) {
+      if (role === 'user') {
+        await sendNotification({
+          userId: userProfile.id,
+          type: 'welcome',
+          title: 'Welcome to BUSSID Ventures! 🚌',
+          message: 'Your account has been approved by the admin team. Enjoy full access to download liveries, participate in tournaments, and join convoys!',
+        });
+      } else {
+        await sendNotification({
+          userId: userProfile.id,
+          type: 'admin_approved',
+          title: 'Admin Access Approved! 🛡️',
+          message: 'Your admin application has been approved by the Founder. You now have full access to the Admin Control Panel.',
+        });
+      }
+    }
+  } catch (notifErr) {
+    console.warn('[BUSSID Ventures] Approval notification notice:', notifErr);
+  }
+
   return { error: null };
 }
 
@@ -1076,6 +1138,42 @@ export async function getCommunityLiveStats(): Promise<CommunityLiveStats> {
       creatorsCount: 50,
       convoysCount: 12,
     };
+  }
+}
+
+export interface AdminNotificationCounts {
+  pendingAdmins: number;
+  pendingLiveries: number;
+  openLiveryRequests: number;
+  reportsCount: number;
+  total: number;
+}
+
+export async function getAdminNotificationCounts(): Promise<AdminNotificationCounts> {
+  try {
+    const [profiles, pendingLiv, requests, stats] = await Promise.all([
+      getAllAdminProfiles(),
+      getPendingLiveries(),
+      getLiveryRequests(),
+      getModerationStats(),
+    ]);
+
+    const pendingAdmins = (profiles || []).filter((p) => p.role === 'pending').length;
+    const pendingLiveries = pendingLiv?.length || 0;
+    const openLiveryRequests = (requests || []).filter((r) => r.status === 'open').length;
+    const reportsCount = (stats?.reported_liveries_count || 0) + (stats?.reported_comments_count || 0);
+    const total = pendingAdmins + pendingLiveries + openLiveryRequests + reportsCount;
+
+    return {
+      pendingAdmins,
+      pendingLiveries,
+      openLiveryRequests,
+      reportsCount,
+      total,
+    };
+  } catch (err) {
+    console.warn('[getAdminNotificationCounts] Error:', err);
+    return { pendingAdmins: 0, pendingLiveries: 0, openLiveryRequests: 0, reportsCount: 0, total: 0 };
   }
 }
 
