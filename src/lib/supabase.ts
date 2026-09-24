@@ -351,22 +351,186 @@ export function invalidateLiveryStats(liveryId?: string) {
 }
 
 export async function getLiveryStats(liveryId: string): Promise<LiveryStats> {
+  if (!liveryId) {
+    return { likes_count: 0, ratings_avg: 0, ratings_count: 0, comments_count: 0, shares_count: 0 };
+  }
+
   const cached = liveryStatsCache.get(liveryId);
   const now = Date.now();
   if (cached && cached.expires > now) {
     return cached.data;
   }
-  const { data } = await supabase.rpc('get_livery_stats', { p_livery_id: liveryId });
-  const result = (data as unknown as LiveryStats) ?? { likes_count: 0, ratings_avg: 0, ratings_count: 0, comments_count: 0, shares_count: 0 };
-  liveryStatsCache.set(liveryId, { data: result, expires: now + 60_000 });
+
+  let stats: LiveryStats = {
+    likes_count: 0,
+    ratings_avg: 0,
+    ratings_count: 0,
+    comments_count: 0,
+    shares_count: 0,
+  };
+
+  let rpcSucceeded = false;
+
+  // 1. Try RPC first
+  try {
+    const { data, error } = await supabase.rpc('get_livery_stats', { p_livery_id: liveryId });
+    if (!error && data) {
+      const row = Array.isArray(data) ? data[0] : data;
+      if (row && typeof row === 'object') {
+        stats = {
+          likes_count: Number(row.likes_count ?? 0),
+          ratings_avg: Number(row.ratings_avg ?? 0),
+          ratings_count: Number(row.ratings_count ?? 0),
+          comments_count: Number(row.comments_count ?? 0),
+          shares_count: Number(row.shares_count ?? 0),
+        };
+        rpcSucceeded = true;
+      }
+    }
+  } catch (err) {
+    console.warn('[getLiveryStats] RPC failed, falling back to direct table queries:', err);
+  }
+
+  // 2. Direct table queries if RPC failed or returned 0s (to ensure live counts are accurate)
+  if (!rpcSucceeded || (stats.likes_count === 0 && stats.ratings_count === 0)) {
+    try {
+      const [likesRes, ratingsRes, sharesRes, commentsRes] = await Promise.all([
+        supabase.from('livery_likes').select('id', { count: 'exact', head: true }).eq('livery_id', liveryId),
+        supabase.from('livery_ratings').select('rating').eq('livery_id', liveryId),
+        supabase.from('livery_shares').select('id', { count: 'exact', head: true }).eq('livery_id', liveryId),
+        supabase.from('comments').select('id', { count: 'exact', head: true }).eq('livery_id', liveryId).eq('status', 'visible'),
+      ]);
+
+      const ratings = ratingsRes.data ?? [];
+      const ratings_count = ratings.length;
+      const ratings_avg = ratings_count > 0
+        ? ratings.reduce((sum, r) => sum + Number(r.rating || 0), 0) / ratings_count
+        : 0;
+
+      stats = {
+        likes_count: likesRes.count ?? stats.likes_count,
+        ratings_avg: ratings_count > 0 ? ratings_avg : stats.ratings_avg,
+        ratings_count: ratings_count > 0 ? ratings_count : stats.ratings_count,
+        comments_count: commentsRes.count ?? stats.comments_count,
+        shares_count: sharesRes.count ?? stats.shares_count,
+      };
+    } catch (tblErr) {
+      console.warn('[getLiveryStats] Table query fallback error:', tblErr);
+    }
+  }
+
+  liveryStatsCache.set(liveryId, { data: stats, expires: now + 30_000 });
+  return stats;
+}
+
+export async function getBatchLiveryStats(liveryIds: string[]): Promise<Record<string, LiveryStats>> {
+  if (!liveryIds || liveryIds.length === 0) return {};
+
+  const now = Date.now();
+  const result: Record<string, LiveryStats> = {};
+  const missingIds: string[] = [];
+
+  for (const id of liveryIds) {
+    const cached = liveryStatsCache.get(id);
+    if (cached && cached.expires > now) {
+      result[id] = cached.data;
+    } else {
+      missingIds.push(id);
+    }
+  }
+
+  if (missingIds.length === 0) return result;
+
+  try {
+    const [likesRes, ratingsRes, sharesRes, commentsRes] = await Promise.all([
+      supabase.from('livery_likes').select('livery_id').in('livery_id', missingIds),
+      supabase.from('livery_ratings').select('livery_id, rating').in('livery_id', missingIds),
+      supabase.from('livery_shares').select('livery_id').in('livery_id', missingIds),
+      supabase.from('comments').select('livery_id').in('livery_id', missingIds).eq('status', 'visible'),
+    ]);
+
+    const likesMap: Record<string, number> = {};
+    (likesRes.data ?? []).forEach((row: { livery_id: string }) => {
+      likesMap[row.livery_id] = (likesMap[row.livery_id] || 0) + 1;
+    });
+
+    const ratingsMap: Record<string, number[]> = {};
+    (ratingsRes.data ?? []).forEach((row: { livery_id: string; rating: number }) => {
+      if (!ratingsMap[row.livery_id]) ratingsMap[row.livery_id] = [];
+      ratingsMap[row.livery_id].push(Number(row.rating || 0));
+    });
+
+    const sharesMap: Record<string, number> = {};
+    (sharesRes.data ?? []).forEach((row: { livery_id: string }) => {
+      sharesMap[row.livery_id] = (sharesMap[row.livery_id] || 0) + 1;
+    });
+
+    const commentsMap: Record<string, number> = {};
+    (commentsRes.data ?? []).forEach((row: { livery_id: string }) => {
+      commentsMap[row.livery_id] = (commentsMap[row.livery_id] || 0) + 1;
+    });
+
+    for (const id of missingIds) {
+      const rList = ratingsMap[id] || [];
+      const rCount = rList.length;
+      const rAvg = rCount > 0 ? rList.reduce((a, b) => a + b, 0) / rCount : 0;
+
+      const itemStats: LiveryStats = {
+        likes_count: likesMap[id] || 0,
+        ratings_avg: rAvg,
+        ratings_count: rCount,
+        comments_count: commentsMap[id] || 0,
+        shares_count: sharesMap[id] || 0,
+      };
+
+      liveryStatsCache.set(id, { data: itemStats, expires: now + 30_000 });
+      result[id] = itemStats;
+    }
+  } catch (err) {
+    console.warn('[getBatchLiveryStats] Batch fetch error:', err);
+    await Promise.all(
+      missingIds.map(async (id) => {
+        result[id] = await getLiveryStats(id);
+      })
+    );
+  }
+
   return result;
 }
 
 // --- Likes ---
 export async function toggleLike(liveryId: string): Promise<number> {
   invalidateLiveryStats(liveryId);
-  const { data } = await supabase.rpc('toggle_livery_like', { p_livery_id: liveryId });
-  return (data as number) ?? 0;
+  const user = (await supabase.auth.getUser()).data.user;
+  if (!user) return 0;
+
+  try {
+    const { data: existing } = await supabase
+      .from('livery_likes')
+      .select('id')
+      .eq('livery_id', liveryId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (existing) {
+      await supabase.from('livery_likes').delete().eq('id', existing.id);
+    } else {
+      await supabase.from('livery_likes').insert({ livery_id: liveryId, user_id: user.id });
+    }
+
+    const { count } = await supabase
+      .from('livery_likes')
+      .select('id', { count: 'exact', head: true })
+      .eq('livery_id', liveryId);
+
+    const total = count ?? 0;
+    invalidateLiveryStats(liveryId);
+    return total;
+  } catch (err) {
+    console.warn('[toggleLike] Direct toggle error, trying RPC:', err);
+    const { data } = await supabase.rpc('toggle_livery_like', { p_livery_id: liveryId });
+    return Number(data ?? 0);
+  }
 }
 
 export async function hasUserLiked(liveryId: string, userId: string): Promise<boolean> {
@@ -382,10 +546,46 @@ export async function hasUserLiked(liveryId: string, userId: string): Promise<bo
 // --- Ratings ---
 export async function submitRating(liveryId: string, rating: number): Promise<{ avg_rating: number; rating_count: number }> {
   invalidateLiveryStats(liveryId);
-  const { data } = await supabase.rpc('submit_livery_rating', { p_livery_id: liveryId, p_rating: rating });
-  if (!data) return { avg_rating: 0, rating_count: 0 };
-  const row = data as unknown as { avg_rating: number; rating_count: number };
-  return { avg_rating: Number(row.avg_rating), rating_count: Number(row.rating_count) };
+  const user = (await supabase.auth.getUser()).data.user;
+  if (!user) return { avg_rating: 0, rating_count: 0 };
+
+  try {
+    const { error: upsertErr } = await supabase
+      .from('livery_ratings')
+      .upsert(
+        { livery_id: liveryId, user_id: user.id, rating, updated_at: new Date().toISOString() },
+        { onConflict: 'livery_id,user_id' }
+      );
+
+    if (upsertErr) {
+      console.warn('[submitRating] Upsert error, trying RPC:', upsertErr);
+      const { data } = await supabase.rpc('submit_livery_rating', { p_livery_id: liveryId, p_rating: rating });
+      if (data) {
+        const row = Array.isArray(data) ? data[0] : data;
+        const avg_rating = Number(row?.avg_rating ?? rating);
+        const rating_count = Number(row?.rating_count ?? 1);
+        invalidateLiveryStats(liveryId);
+        return { avg_rating, rating_count };
+      }
+    }
+
+    const { data: allRatings } = await supabase
+      .from('livery_ratings')
+      .select('rating')
+      .eq('livery_id', liveryId);
+
+    const ratings = allRatings ?? [];
+    const rating_count = ratings.length;
+    const avg_rating = rating_count > 0
+      ? ratings.reduce((sum, r) => sum + Number(r.rating || 0), 0) / rating_count
+      : rating;
+
+    invalidateLiveryStats(liveryId);
+    return { avg_rating, rating_count };
+  } catch (err) {
+    console.warn('[submitRating] Error submitting rating:', err);
+    return { avg_rating: rating, rating_count: 1 };
+  }
 }
 
 export async function getUserRating(liveryId: string, userId: string): Promise<number | null> {
@@ -496,9 +696,16 @@ export async function markAllNotificationsRead(): Promise<void> {
 }
 
 // --- Shares ---
-export async function trackShare(liveryId: string, platform: string): Promise<void> {
-  const userId = (await supabase.auth.getUser()).data.user?.id;
-  await supabase.from('livery_shares').insert({ livery_id: liveryId, platform, user_id: userId ?? null });
+export async function trackShare(liveryId: string, platform: string): Promise<number> {
+  invalidateLiveryStats(liveryId);
+  try {
+    const userId = (await supabase.auth.getUser()).data.user?.id;
+    await supabase.from('livery_shares').insert({ livery_id: liveryId, platform, user_id: userId ?? null });
+  } catch (err) {
+    console.warn('[trackShare] Error inserting share:', err);
+  }
+  const count = await getShareCount(liveryId);
+  return count;
 }
 
 export async function getShareCount(liveryId: string): Promise<number> {

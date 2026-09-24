@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Search, SlidersHorizontal, X, Download, TrendingUp, Clock, Upload, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { supabase, getBatchLiveryStats } from '@/lib/supabase';
 import type { Livery, Category } from '@/lib/types';
 import { LiveryCard, LiveryCardSkeleton } from '@/components/LiveryCard';
 
@@ -94,6 +94,12 @@ export function LiveryPage() {
 
   const totalPages = Math.ceil(liveries.length / PER_PAGE);
   const paged = liveries.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+
+  useEffect(() => {
+    if (paged.length > 0) {
+      getBatchLiveryStats(paged.map((l) => l.id));
+    }
+  }, [paged]);
 
   function resetFilters() {
     setSearch('');

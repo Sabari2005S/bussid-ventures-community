@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import {
   supabase, publicImageUrl, downloadLiveryFile, getLiveryGallery,
-  getLiveryStats, toggleLike, hasUserLiked, submitRating, getUserRating,
+  getLiveryStats, invalidateLiveryStats, toggleLike, hasUserLiked, submitRating, getUserRating,
   getComments, postComment, updateComment, deleteComment, toggleCommentLike,
   hasUserLikedComment, trackShare, reportContent, trackDownload, getVerifiedCreatorEmails,
   getRelatedLiveries,
@@ -88,6 +88,50 @@ export function LiveryDetailPage() {
 
   useEffect(() => { loadAll(); }, [loadAll]);
 
+  // Live real-time stats updates (likes, ratings, shares)
+  useEffect(() => {
+    if (!id) return;
+
+    let mounted = true;
+    async function refreshLiveStats() {
+      if (!id || !mounted) return;
+      invalidateLiveryStats(id);
+      const s = await getLiveryStats(id);
+      if (!mounted) return;
+      setStats(s);
+      if (user) {
+        const [userHasLiked, currentRating] = await Promise.all([
+          hasUserLiked(id, user.id),
+          getUserRating(id, user.id),
+        ]);
+        if (!mounted) return;
+        setLiked(userHasLiked);
+        setUserRating(currentRating);
+      }
+    }
+
+    const channel = supabase
+      .channel(`livery_live_stats_${id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'livery_likes', filter: `livery_id=eq.${id}` }, () => {
+        refreshLiveStats();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'livery_ratings', filter: `livery_id=eq.${id}` }, () => {
+        refreshLiveStats();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'livery_shares', filter: `livery_id=eq.${id}` }, () => {
+        refreshLiveStats();
+      })
+      .subscribe();
+
+    const interval = setInterval(refreshLiveStats, 15000);
+
+    return () => {
+      mounted = false;
+      supabase.removeChannel(channel);
+      clearInterval(interval);
+    };
+  }, [id, user]);
+
   async function handleDownload() {
     if (!livery || downloading) return;
     setDownloading(true);
@@ -125,7 +169,7 @@ export function LiveryDetailPage() {
     toast('success', `Rated ${rating} star${rating > 1 ? 's' : ''}!`);
   }
 
-  function handleShare(platform: string) {
+  async function handleShare(platform: string) {
     if (!livery) return;
     const shareUrl = window.location.href;
     const shareText = `Check out ${livery.name} livery!`;
@@ -143,8 +187,8 @@ export function LiveryDetailPage() {
     } else if (urls[platform]) {
       window.open(urls[platform], '_blank', 'noopener,noreferrer');
     }
-    trackShare(livery.id, platform);
-    setStats((s) => ({ ...s, shares_count: s.shares_count + 1 }));
+    const newShares = await trackShare(livery.id, platform);
+    setStats((s) => ({ ...s, shares_count: newShares }));
   }
 
   async function handlePostComment() {
@@ -287,13 +331,13 @@ export function LiveryDetailPage() {
                 <Star className="h-5 w-5 text-neon fill-neon/30" />
                 <div>
                   <div className="font-display font-bold text-bone">{stats.ratings_count > 0 ? Number(stats.ratings_avg).toFixed(1) : '—'}</div>
-                  <div className="font-mono text-[9px] uppercase tracking-widest text-bone/40">{stats.ratings_count} ratings</div>
+                  <div className="font-mono text-[9px] uppercase tracking-widest text-bone/40">{stats.ratings_count ?? 0} {stats.ratings_count === 1 ? 'rating' : 'ratings'}</div>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <Heart className={`h-5 w-5 ${liked ? 'text-flame fill-flame' : 'text-bone/40'}`} />
                 <div>
-                  <div className="font-display font-bold text-bone">{stats.likes_count}</div>
+                  <div className="font-display font-bold text-bone">{stats.likes_count ?? 0}</div>
                   <div className="font-mono text-[9px] uppercase tracking-widest text-bone/40">likes</div>
                 </div>
               </div>
@@ -307,7 +351,7 @@ export function LiveryDetailPage() {
               <div className="flex items-center gap-2">
                 <Share2 className="h-5 w-5 text-neon" />
                 <div>
-                  <div className="font-display font-bold text-bone">{stats.shares_count}</div>
+                  <div className="font-display font-bold text-bone">{stats.shares_count ?? 0}</div>
                   <div className="font-mono text-[9px] uppercase tracking-widest text-bone/40">shares</div>
                 </div>
               </div>
@@ -376,7 +420,7 @@ export function LiveryDetailPage() {
                   </button>
                 ))}
                 <span className="ml-3 font-body text-sm text-bone/40">
-                  {stats.ratings_count > 0 ? `${Number(stats.ratings_avg).toFixed(1)} / 5 — Based on ${stats.ratings_count} rating${stats.ratings_count > 1 ? 's' : ''}` : 'No ratings yet'}
+                  {stats.ratings_count > 0 ? `${Number(stats.ratings_avg).toFixed(1)} / 5 — Based on ${stats.ratings_count} rating${stats.ratings_count > 1 ? 's' : ''}` : 'No ratings yet (Be the first to rate!)'}
                 </span>
               </div>
             </div>

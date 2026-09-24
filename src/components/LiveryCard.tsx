@@ -5,17 +5,19 @@ import { motion } from 'framer-motion';
 import type { Livery } from '@/lib/types';
 import { publicImageUrl, downloadLiveryFile, getLiveryStats, getVerifiedCreatorEmails, trackDownload, type LiveryStats } from '@/lib/supabase';
 
-export function LiveryCard({ livery, index = 0 }: { livery: Livery; index?: number }) {
+export function LiveryCard({ livery, index = 0, initialStats }: { livery: Livery; index?: number; initialStats?: LiveryStats }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [tilt, setTilt] = useState({ rx: 0, ry: 0 });
   const [downloading, setDownloading] = useState(false);
   const [downloadSuccess, setDownloadSuccess] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
-  const [stats, setStats] = useState<LiveryStats>({ likes_count: 0, ratings_avg: 0, ratings_count: 0, comments_count: 0, shares_count: 0 });
+  const [stats, setStats] = useState<LiveryStats>(
+    initialStats || { likes_count: 0, ratings_avg: 0, ratings_count: 0, comments_count: 0, shares_count: 0 }
+  );
 
   useEffect(() => {
     let mounted = true;
-    (async () => {
+    const fetchCardData = async () => {
       const [s, verified] = await Promise.all([
         getLiveryStats(livery.id),
         getVerifiedCreatorEmails(),
@@ -26,8 +28,15 @@ export function LiveryCard({ livery, index = 0 }: { livery: Livery; index?: numb
         const c = livery.creator.toLowerCase().trim();
         setIsVerified(verified.has(c) || verified.has(c.split('@')[0]));
       }
-    })();
-    return () => { mounted = false; };
+    };
+
+    fetchCardData();
+    const interval = setInterval(fetchCardData, 30000);
+
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
   }, [livery.id, livery.creator]);
 
   function onMove(e: React.MouseEvent) {
@@ -124,15 +133,15 @@ export function LiveryCard({ livery, index = 0 }: { livery: Livery; index?: numb
 
           {/* Stats: likes, rating, downloads */}
           <div className="flex items-center gap-4 text-xs font-body text-bone/40 mb-4">
-            <span className="flex items-center gap-1.5">
-              <Heart className="h-3.5 w-3.5 text-flame" />
-              {stats.likes_count}
+            <span className="flex items-center gap-1.5" title={`${stats.likes_count ?? 0} likes`}>
+              <Heart className="h-3.5 w-3.5 text-flame fill-flame/20" />
+              {stats.likes_count ?? 0}
             </span>
-            <span className="flex items-center gap-1.5">
+            <span className="flex items-center gap-1.5" title={stats.ratings_count > 0 ? `${Number(stats.ratings_avg).toFixed(1)} / 5 (${stats.ratings_count} ratings)` : 'No ratings yet'}>
               <Star className="h-3.5 w-3.5 text-neon fill-neon/30" />
               {stats.ratings_count > 0 ? Number(stats.ratings_avg).toFixed(1) : '—'}
             </span>
-            <span className="flex items-center gap-1.5">
+            <span className="flex items-center gap-1.5" title={`${livery.downloads.toLocaleString()} downloads`}>
               <Download className="h-3.5 w-3.5" />
               {livery.downloads.toLocaleString()}
             </span>
